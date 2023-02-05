@@ -18,6 +18,37 @@ Responde con el estado de la API (o nunca responde).
 }
 ```
 
+### GET `/cines/all`
+
+Duelve la lista completa de cines disponibles.
+
+<details>
+  <summary>Detalles</summary>
+
+Respuesta exitosa:
+
+```jsonc
+{
+    "cinemas": [
+        {
+            "cinema_id": "2705",
+            "name": "CiNEXT Gamarra",
+            "city": "Lima"
+        },
+        {
+            "cinema_id": "2702",
+            "name": "CiNEXT Huancayo",
+            "city": "Huancayo"
+        },
+        // ...
+    ],
+    "code": 200,
+    "error": null
+}
+```
+
+</details>
+
 ### GET `/cines/cercanos`
 
 Devuelve la lista de los cines disponibles en la ciudad del usuario.
@@ -39,7 +70,7 @@ Respuesta exitosa:
     "cinemas": [
         {
             "cinema_id": "2705",
-            "name": "Cinemark Gamarra",
+            "name": "CiNEXT Gamarra",
             "city": "Lima"
         },
         // ...
