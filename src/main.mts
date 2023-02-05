@@ -1,26 +1,13 @@
 import fetch from 'node-fetch';
 import express from 'express';
 import geoip from 'geoip-lite';
-import { AllCinemasRouteResponse, CinemaConfiteriaRouteResponse, CinemaInformation, CinemaInformationWithCoords, NearCinemasRouteResponse, FetchedConsessionItemsResponse, FetchedTheatresResponse } from './types';
+import { APIcache, loadCache, updateIntervalms } from './cache.mjs';
+import { AllCinemasRouteResponse, CinemaConfiteriaRouteResponse, CinemaInformation, CinemaInformationWithCoords, NearCinemasRouteResponse, FetchedConsessionItemsResponse } from './types';
 
 const app = express();
 app.set('trust proxy', true);
-const cinemas_data: CinemaInformationWithCoords[] = [];
-const PORT = 3000;
 
-(async function load() {
-  const response = await fetch('https://api.cinemark-peru.com/api/vista/data/theatres');
-  const data_theatres = (await response.json()) as FetchedTheatresResponse;
-  const cinemas = data_theatres
-    .map(c => c.cinemas).flat()
-    .map((theatre): CinemaInformationWithCoords => ({
-      cinema_id: theatre.ID,
-      name: theatre.Name.replace(/cinemark/i, 'CiNEXT'),
-      city: theatre.City,
-      coords: { lat: Number(theatre.Latitude), lon: Number(theatre.Longitude) }
-  }));
-  cinemas_data.push(...cinemas);
-})();
+const PORT = 3000;
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
@@ -35,7 +22,7 @@ app.get('/cines/cercanos', (req, res) => {
     error: null
   };
   
-  if (cinemas_data.length === 0) {
+  if (APIcache.all_cinemas.length === 0) {
     to_return.error = 'Error al cargar los cines';
     to_return.code = 503;
     res.status(503).send(to_return);
@@ -56,7 +43,7 @@ app.get('/cines/cercanos', (req, res) => {
   to_return.city = city;
   
   // Only the cinemas of your city
-  available_cinemas = cinemas_data.filter(cinema => cinema.city === to_return.city);
+  available_cinemas = APIcache.all_cinemas.filter(cinema => cinema.city === to_return.city);
 
   if (available_cinemas.length === 0) {
     to_return.error = 'No hay cines disponibles en tu ciudad';
@@ -90,14 +77,14 @@ app.get('/cines/all', async (req, res) => {
     error: null
   };
 
-  if (cinemas_data.length === 0) {
+  if (APIcache.all_cinemas.length === 0) {
     to_return.error = 'Error al cargar los cines';
     to_return.code = 503;
     res.status(503).send(to_return);
     return;
   }
 
-  to_return.cinemas = cinemas_data.map((cinema): CinemaInformation => {
+  to_return.cinemas = APIcache.all_cinemas.map((cinema): CinemaInformation => {
     const { coords, ...rest } = cinema;
     return rest;
   });
@@ -115,31 +102,38 @@ app.get('/cines/:cinema_id/confiteria', async (req, res) => {
   const { cinema_id } = req.params;
 
   // Check if the cinema exists
-  const existCinema = cinemas_data.some(cinema => cinema.cinema_id === cinema_id);
-  if (!existCinema || !cinema_id) {
+  const cinema = APIcache.all_cinemas.find(cinema => cinema.cinema_id === cinema_id);
+
+  if (!cinema) {
     to_return.code = 404;
     to_return.error = 'Cine no encontrado';
     res.status(404).send(to_return);
     return;
   }
 
-  // Fetch the data
-  const endpoint = `https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id=${cinema_id}`;
-  const response = await fetch(endpoint);
-  const data = (await response.json()) as FetchedConsessionItemsResponse;
-  if (data.ErrorDescription || data.ResponseCode === 4) {
-    to_return.code = 404;
-    to_return.error = 'Cine no encontrado';
-    res.status(404).send(to_return);
-    return;
-  }
+  const cachedConfiterias = APIcache.confiterias[cinema.city];
 
-  to_return.confiteria = data.ConcessionItems.map(item => ({
-    item_id: item.Id,
-    name: item.Description,
-    description: item.ExtendedDescription,
-    priceInCents: item.PriceInCents
-  }));
+  if (cachedConfiterias) {
+    to_return.confiteria = cachedConfiterias;
+  }
+  else {
+    // Fetch the data
+    const endpoint = `https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id=${cinema_id}`;
+    const response = await fetch(endpoint);
+    const data = (await response.json()) as FetchedConsessionItemsResponse;
+    if (data.ErrorDescription || data.ResponseCode === 4) {
+      to_return.code = 404;
+      to_return.error = 'Cine no encontrado';
+      res.status(404).send(to_return);
+      return;
+    }
+    to_return.confiteria = data.ConcessionItems.map(item => ({
+      item_id: item.Id,
+      name: item.Description,
+      description: item.ExtendedDescription,
+      priceInCents: item.PriceInCents
+    }));
+  }
 
   res.send(to_return);
 });
