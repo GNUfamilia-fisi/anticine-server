@@ -6,7 +6,7 @@ Server for the CiNEXT emulator program.
 
 ## Endpoints
 
-### `GET /`
+### GET `/`
 
 <details>
     <summary>Ver detalles</summary>
@@ -14,7 +14,7 @@ Server for the CiNEXT emulator program.
     Returns the current status of the server.
 </details>
 
-### `GET /cines/cercanos`
+### GET `/cines/cercanos`
 
 <details>
   <summary>Ver detalles</summary>
@@ -87,7 +87,7 @@ Server for the CiNEXT emulator program.
 
 </details>
 
-### `GET /cines/{cinema_id}/confiteria`
+### GET `/cines/{cinema_id}/confiteria`
 
 <details>
     <summary>Ver detalles</summary>
