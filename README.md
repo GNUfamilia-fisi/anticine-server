@@ -11,7 +11,7 @@ Server for the CiNEXT emulator program.
 <details>
     <summary>Ver detalles</summary>
 
-Estado actual del servidor.
+Responde con el estado de la API.
 
 ```json
 {
@@ -30,7 +30,7 @@ Estado actual del servidor.
 
 Devuelve la lista de los cines disponibles en la ciudad del usuario.
 
-La lista `cinemas`, de existir estará ordenada por cercanía al usuario.
+Si la lista de `cinemas` estará ordenada por cercanía al usuario.
 El primer cine siempre será el más cercano.
 
 Para determinar la ciudad y las coordenadas aproximadas del usuario, se hace
