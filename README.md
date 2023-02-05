@@ -138,4 +138,4 @@ Si el `cinema_id` proporcionado no pertenece a ningún cine, devuelve:
 ## Sobre la API
 
 HTTP API desarrollada con [Express](https://expressjs.com/) para
-[CiNEXT](https://nodejs.org/).
+[CiNEXT](https://github.com/GNUfamilia-fisi/CiNEXT).
