@@ -13,9 +13,9 @@ const PORT = 3000;
   const data_theatres = (await response.json()) as FetchedTheatresResponse;
   const cinemas = data_theatres.map(c => c.cinemas).flat().map((theatre) => ({
     cinema_id: theatre.ID,
-    name: theatre.Name.replace(/cinemark/i, 'Cinemark'),
+    name: theatre.Name.replace(/cinemark/i, 'CiNEXT'),
     city: theatre.City,
-    coords: { lat: theatre.Latitude, lon: theatre.Longitude }
+    coords: { lat: Number(theatre.Latitude), lon: Number(theatre.Longitude) }
   }));
   cinemas_data.push(...cinemas);
 })();
@@ -24,62 +24,70 @@ app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });
 
-app.get('/cines', (req, res) => {
+app.get('/cines/cercanos', (req, res) => {
   const to_return: CinemasRouteResponse = {
-    cines_en_tu_ciudad: [],
-    cine_mas_cercano: null,
+    city: null,
+    cinemas: [],
+    nearest_id: null,
     code: 200,
     error: null
   };
   
   if (cinemas_data.length === 0) {
-    to_return.error = 'No existen cines para mostrar';
-    to_return.code = 500;
-    res.send(to_return);
+    to_return.error = 'Error al cargar los cines';
+    to_return.code = 503;
+    res.status(503).send(to_return);
     return;
   }
 
-  let ubicacion_encontrada = false;
   let available_cinemas: CinemaInformationWithCoords[] = [];
 
   const location = geoip.lookup(req.ip);
-  if (location) {
-    const { ll, city } = location;
-    ubicacion_encontrada = true;
-
-    // Only the cinemas of your city
-    available_cinemas = cinemas_data.filter(cinema => cinema.city === city);
-
-    const getDistance = (cinema) => {
-      let { lat, lon } = cinema.coords;
-      return Math.sqrt((lat - ll[0]) ** 2 + (lon - ll[1]) ** 2);
-    }
-    available_cinemas = available_cinemas.sort((cinemaA, cinemaB) => {
-      return getDistance(cinemaA) - getDistance(cinemaB)
-    });
+  if (!location) {
+    to_return.error = 'No se pudo determinar la ubicación';
+    to_return.code = 500;
+    res.status(500).send(to_return);
+    return;
   }
 
-  to_return.cines_en_tu_ciudad = available_cinemas.map(cinema => {
+  const { ll, city } = location;
+  to_return.city = city;
+  
+  // Only the cinemas of your city
+  available_cinemas = cinemas_data.filter(cinema => cinema.city === to_return.city);
+
+  if (available_cinemas.length === 0) {
+    to_return.error = 'No hay cines disponibles en tu ciudad';
+    to_return.code = 404;
+    res.status(404).send(to_return);
+    return;
+  }
+
+  const getDistance = (cinema: CinemaInformationWithCoords) => {
+    let { lat, lon } = cinema.coords;
+    return Math.sqrt((lat - ll[0]) ** 2 + (lon - ll[1]) ** 2);
+  }
+  available_cinemas = available_cinemas.sort((cinemaA, cinemaB) => {
+    return getDistance(cinemaA) - getDistance(cinemaB)
+  });
+
+  to_return.cinemas = available_cinemas.map(cinema => {
     const { coords, ...rest } = cinema;
     return rest;
-  })
-  if (ubicacion_encontrada) {
-    to_return.cine_mas_cercano = to_return.cines_en_tu_ciudad[0];
-  }
-  
-  res.send(to_return);
+  });
+  to_return.nearest_id = available_cinemas[0].cinema_id;
 
+  res.send(to_return);
   console.log(`hola ${req.ip}`);
 });
 
-app.get('/cines/confiteria', async (req, res) => {
+app.get('/cines/:cinema_id/confiteria', async (req, res) => {
   const to_return: CinemaConfiteriaRouteResponse = {
     confiteria: [],
     code: 200,
     error: null
   };
-
-  const { cinema_id } = req.query as { cinema_id: string };
+  const { cinema_id } = req.params;
 
   // Check if the cinema exists
   const existCinema = cinemas_data.some(cinema => cinema.cinema_id === cinema_id);

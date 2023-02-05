@@ -28,13 +28,14 @@ interface CinemaInformation {
 // extends CinemaInformation
 interface CinemaInformationWithCoords extends CinemaInformation {
   coords: {
-    lat: string;
-    lon: string;
+    lat: number;
+    lon: number;
   }
 }
 interface CinemasRouteResponse {
-  cines_en_tu_ciudad: CinemaInformation[]
-  cine_mas_cercano: CinemaInformation | null
+  city: string | null;
+  cinemas: CinemaInformation[]
+  nearest_id: string | null
   code: number,
   error: string | null
 }
