@@ -8,12 +8,7 @@ Server for the CiNEXT emulator program.
 
 ### GET `/`
 
-Responde con el estado de la API.
-
-<details>
-    <summary>Ejemplos</summary>
-
-Ejemplo de respuesta exitosa:
+Responde con el estado de la API (o nunca responde).
 
 ```json
 {
@@ -23,11 +18,12 @@ Ejemplo de respuesta exitosa:
 }
 ```
 
-</details>
-
 ### GET `/cines/cercanos`
 
 Devuelve la lista de los cines disponibles en la ciudad del usuario.
+
+<details>
+  <summary>Detalles</summary>
 
 Si existe, lista de `cinemas` estará ordenada por cercanía al usuario.
 El primer cine siempre será el más cercano.
@@ -35,10 +31,7 @@ El primer cine siempre será el más cercano.
 Para determinar la ciudad y las coordenadas aproximadas del usuario, se hace
 uso de la librería [geoip-lite](https://www.npmjs.com/package/geoip-lite).
 
-<details>
-  <summary>Ejemplos</summary>
-
-Ejemplo de respuesta exitosa:
+Respuesta exitosa:
 
 ```jsonc
 {
@@ -100,12 +93,12 @@ obtener la lista completa de cines disponibles.
 
 ### GET `/cines/{cinema_id}/confiteria`
 
-Devuelve la lista de productos de la confitería de un cine determinado.
+Devuelve los productos en la confitería de un cine.
 
 <details>
-    <summary>Ejemplos</summary>
+    <summary>Detalles</summary>
 
-Ejemplo de respuesta exitosa:
+Respuesta exitosa:
 
 ```json
 {
@@ -139,6 +132,8 @@ Si el `cinema_id` proporcionado no pertenece a ningún cine, devuelve:
 ```
 
 </details>
+
+---
 
 ## Sobre la API
 
