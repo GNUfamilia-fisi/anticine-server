@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import express from 'express';
 import geoip from 'geoip-lite';
-import { CinemaConfiteriaRouteResponse, CinemaInformationWithCoords, CinemasRouteResponse, FetchedConsessionItemsResponse, FetchedTheatresResponse } from './types';
+import { AllCinemasRouteResponse, CinemaConfiteriaRouteResponse, CinemaInformation, CinemaInformationWithCoords, NearCinemasRouteResponse, FetchedConsessionItemsResponse, FetchedTheatresResponse } from './types';
 
 const app = express();
 app.set('trust proxy', true);
@@ -11,11 +11,13 @@ const PORT = 3000;
 (async function load() {
   const response = await fetch('https://api.cinemark-peru.com/api/vista/data/theatres');
   const data_theatres = (await response.json()) as FetchedTheatresResponse;
-  const cinemas = data_theatres.map(c => c.cinemas).flat().map((theatre) => ({
-    cinema_id: theatre.ID,
-    name: theatre.Name.replace(/cinemark/i, 'CiNEXT'),
-    city: theatre.City,
-    coords: { lat: Number(theatre.Latitude), lon: Number(theatre.Longitude) }
+  const cinemas = data_theatres
+    .map(c => c.cinemas).flat()
+    .map((theatre): CinemaInformationWithCoords => ({
+      cinema_id: theatre.ID,
+      name: theatre.Name.replace(/cinemark/i, 'CiNEXT'),
+      city: theatre.City,
+      coords: { lat: Number(theatre.Latitude), lon: Number(theatre.Longitude) }
   }));
   cinemas_data.push(...cinemas);
 })();
@@ -25,7 +27,7 @@ app.listen(PORT, () => {
 });
 
 app.get('/cines/cercanos', (req, res) => {
-  const to_return: CinemasRouteResponse = {
+  const to_return: NearCinemasRouteResponse = {
     city: null,
     cinemas: [],
     nearest_id: null,
@@ -80,6 +82,29 @@ app.get('/cines/cercanos', (req, res) => {
   res.send(to_return);
   console.log(`hola ${req.ip}`);
 });
+
+app.get('/cines/all', async (req, res) => {
+  const to_return: AllCinemasRouteResponse = {
+    cinemas: [],
+    code: 200,
+    error: null
+  };
+
+  if (cinemas_data.length === 0) {
+    to_return.error = 'Error al cargar los cines';
+    to_return.code = 503;
+    res.status(503).send(to_return);
+    return;
+  }
+
+  to_return.cinemas = cinemas_data.map((cinema): CinemaInformation => {
+    const { coords, ...rest } = cinema;
+    return rest;
+  });
+
+  res.send(to_return);
+});
+  
 
 app.get('/cines/:cinema_id/confiteria', async (req, res) => {
   const to_return: CinemaConfiteriaRouteResponse = {

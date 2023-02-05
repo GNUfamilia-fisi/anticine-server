@@ -32,12 +32,23 @@ interface CinemaInformationWithCoords extends CinemaInformation {
     lon: number;
   }
 }
-interface CinemasRouteResponse {
+
+// api.url/cines/cercanos
+
+interface NearCinemasRouteResponse {
   city: string | null;
   cinemas: CinemaInformation[]
   nearest_id: string | null
   code: number,
   error: string | null
+}
+
+// api.url/cines/all
+
+interface AllCinemasRouteResponse {
+  cinemas: CinemaInformation[];
+  code: number;
+  error: string | null;
 }
 
 //https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id={}
@@ -90,6 +101,8 @@ interface CinemaConfiteriaInformation {
   description: string;
   priceInCents: number;
 }
+
+// api.url/cines/:cinema_id/confiteria
 
 interface CinemaConfiteriaRouteResponse {
   confiteria: CinemaConfiteriaInformation[]
