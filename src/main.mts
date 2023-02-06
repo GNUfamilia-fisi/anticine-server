@@ -108,8 +108,9 @@ app.get('/cines/:cinema_id/cartelera', (req, res) => {
     res.send(to_return);
     return;
   }
+  to_return.days = billboard;
 
-  res.send(billboard);
+  res.send(to_return);
 });
 
 app.get('/cines/:cinema_id/confiteria', async (req, res) => {
