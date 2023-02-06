@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import express from 'express';
 import geoip from 'geoip-lite';
 import { APIcache } from './cache.mjs';
-import { AllCinemasRouteResponse, CinemaConfiteriaRouteResponse, CinemaInformation, CinemaInformationWithCoords, NearCinemasRouteResponse, FetchedConsessionItemsResponse } from './types';
+import { AllCinemasRouteResponse, CinemaConfiteriaRouteResponse, CinemaInformation, CinemaInformationWithCoords, NearCinemasRouteResponse, FetchedConsessionItemsResponse, CinemaBillboardRouteResponse } from './types';
 
 const app = express();
 app.set('trust proxy', true);
@@ -93,9 +93,23 @@ app.get('/cines/all', async (req, res) => {
 });
   
 app.get('/cines/:cinema_id/cartelera', (req, res) => {
+  const to_return: CinemaBillboardRouteResponse = {
+    days: [],
+    code: 200,
+    error: null
+  }
   const { cinema_id } = req.params;
 
-  res.send(APIcache.billboards[cinema_id]);
+  const billboard = APIcache.billboards[cinema_id];
+
+  if (!billboard) {
+    to_return.code = 404;
+    to_return.error = 'No se pudo encontrar la cartelera';
+    res.send(to_return);
+    return;
+  }
+
+  res.send(billboard);
 });
 
 app.get('/cines/:cinema_id/confiteria', async (req, res) => {
