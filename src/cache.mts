@@ -6,7 +6,8 @@ import {
   CinemaMovieInformation,
   FetchedBillboardForCinemaReponse,
   FetchedConsessionItemsResponse,
-  FetchedTheatresResponse } from "./types";
+  FetchedTheatresResponse
+} from "./types";
 
 type city_name = string;
 type cinema_id = string;
@@ -16,7 +17,7 @@ class Cache {
   updateInterval = 1000 * 60 * 30;
   all_cinemas: Promise<CinemaInformationWithCoords[]>
   confiterias: Promise<Record<city_name, Promise<CinemaConfiteriaInformation[]> | undefined>>;
-  billboards: Promise<Record<cinema_id, Promise<CinemaBillboardDayInformation[]> | undefined | null>>;
+  billboards: Promise<Record<cinema_id, Promise<CinemaBillboardDayInformation[]> | undefined>>;
 
   constructor() {
     this.refreshCache();
@@ -28,10 +29,6 @@ class Cache {
   async getCinema(cinema_id: cinema_id) {
     const cinemas = await this.all_cinemas;
     return cinemas.find(cinema => cinema.cinema_id === cinema_id);
-  }
-  async existsCinema(cinema_id: cinema_id) {
-    const cinemas = await this.all_cinemas;
-    return cinemas.some(cinema => cinema.cinema_id === cinema_id);
   }
   async getConfiteria(city: city_name) {
     const confiterias = await this.confiterias;
@@ -83,7 +80,7 @@ class Cache {
     });
 
     this.billboards = new Promise(async (resolve, reject) => {
-      const billboards_to_resolve: Record<cinema_id, Promise<CinemaBillboardDayInformation[]> | undefined | null> = {};
+      const billboards_to_resolve: Record<cinema_id, Promise<CinemaBillboardDayInformation[]> | undefined> = {};
       const cinemas = await this.all_cinemas;
       // Fetching the billboard of each cinema (without resolving)
       const billboardPromises = cinemas.map(cinema => fetch(`https://api.cinemark-peru.com/api/vista/data/billboard?cinema_id=${cinema.cinema_id}`)

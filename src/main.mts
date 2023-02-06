@@ -1,8 +1,13 @@
-import fetch from 'node-fetch';
 import express from 'express';
 import geoip from 'geoip-lite';
 import { blazinglyFastAPICache } from './cache.mjs';
-import { AllCinemasRouteResponse, CinemaConfiteriaRouteResponse, CinemaInformation, CinemaInformationWithCoords, NearCinemasRouteResponse, FetchedConsessionItemsResponse, CinemaBillboardRouteResponse } from './types';
+import { AllCinemasRouteResponse,
+  CinemaConfiteriaRouteResponse,
+  CinemaInformation,
+  CinemaInformationWithCoords,
+  NearCinemasRouteResponse,
+  CinemaBillboardRouteResponse
+} from './types';
 
 const app = express();
 app.set('trust proxy', true);
@@ -22,12 +27,6 @@ app.get('/cines/cercanos', async (req, res) => {
     error: null
   };
 
-  // if (APIcache.all_cinemas.length === 0) {
-  //   to_return.error = 'Error al cargar los cines';
-  //   to_return.code = 503;
-  //   res.status(503).send(to_return);
-  //   return;
-  // }
   const all_cinemas = await blazinglyFastAPICache.getAllCinemas();
   let available_cinemas: CinemaInformationWithCoords[] = [];
 
@@ -77,13 +76,6 @@ app.get('/cines/all', async (req, res) => {
     error: null
   };
 
-  // if (APIcache.all_cinemas.length === 0) {
-  //   to_return.error = 'Error al cargar los cines';
-  //   to_return.code = 503;
-  //   res.status(503).send(to_return);
-  //   return;
-  // }
-
   const all_cinemas = await blazinglyFastAPICache.getAllCinemas();
   to_return.cinemas = all_cinemas.map((cinema): CinemaInformation => {
     const { coords, ...rest } = cinema;
@@ -110,7 +102,6 @@ app.get('/cines/:cinema_id/cartelera', async (req, res) => {
     return;
   }
   to_return.days = billboard;
-
   res.send(to_return);
 });
 
@@ -124,38 +115,13 @@ app.get('/cines/:cinema_id/confiteria', async (req, res) => {
 
   // Check if the cinema exists
   // const cinema = APIcache.all_cinemas.find(cinema => cinema.cinema_id === cinema_id);
-  const exists_cinema = blazinglyFastAPICache.existsCinema(cinema_id);
-  if (!exists_cinema) {
+  const cachedConfiterias = await blazinglyFastAPICache.getConfiteria(cinema_id)
+  if (!cachedConfiterias) {
     to_return.code = 404;
     to_return.error = 'Cine no encontrado';
     res.status(404).send(to_return);
     return;
   }
-  const cachedConfiterias = await blazinglyFastAPICache.getConfiteria(cinema_id)
-
-  // const cachedConfiterias = APIcache.confiterias[cinema.city];
-
-  if (cachedConfiterias) {
-    to_return.confiteria = cachedConfiterias;
-  }
-  else {
-    // Fetch the data
-    const endpoint = `https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id=${cinema_id}`;
-    const response = await fetch(endpoint);
-    const data = (await response.json()) as FetchedConsessionItemsResponse;
-    if (data.ErrorDescription || data.ResponseCode === 4) {
-      to_return.code = 404;
-      to_return.error = 'Cine no encontrado';
-      res.status(404).send(to_return);
-      return;
-    }
-    to_return.confiteria = data.ConcessionItems.map(item => ({
-      item_id: item.Id,
-      name: item.Description,
-      description: item.ExtendedDescription,
-      priceInCents: item.PriceInCents
-    }));
-  }
-
+  to_return.confiteria = cachedConfiterias;
   res.send(to_return);
 });
