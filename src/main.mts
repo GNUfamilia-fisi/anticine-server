@@ -8,6 +8,7 @@ import { AllCinemasRouteResponse,
   NearCinemasRouteResponse,
   CinemaBillboardRouteResponse
 } from './types';
+import { ipLookupLocation } from './geolocation.mjs';
 
 const app = express();
 app.set('trust proxy', true);
@@ -30,7 +31,8 @@ app.get('/cines/cercanos', async (req, res) => {
   const all_cinemas = await blazinglyFastCache.getAllCinemas();
   let available_cinemas: CinemaInformationWithCoords[] = [];
 
-  const location = geoip.lookup(req.ip);
+  const location = await ipLookupLocation(req.ip);
+  // const location = geoip.lookup(req.ip);
   if (!location) {
     to_return.error = 'No se pudo determinar la ubicación';
     to_return.code = 500;
@@ -38,7 +40,9 @@ app.get('/cines/cercanos', async (req, res) => {
     return;
   }
 
-  const { ll, city } = location;
+  const { state_prov: city, latitude, longitude } = location;
+  const user_lat = Number(latitude);
+  const user_lon = Number(longitude);
   to_return.city = city;
 
   // Only the cinemas of your city
@@ -52,8 +56,8 @@ app.get('/cines/cercanos', async (req, res) => {
   }
 
   const getDistance = (cinema: CinemaInformationWithCoords) => {
-    let { lat, lon } = cinema.coords;
-    return Math.sqrt((lat - ll[0]) ** 2 + (lon - ll[1]) ** 2);
+    let { lat: cine_lat, lon: cine_lon } = cinema.coords;
+    return  Math.sqrt((cine_lat - user_lat) ** 2 + (cine_lon - user_lon) ** 2);
   }
   available_cinemas = available_cinemas.sort((cinemaA, cinemaB) => {
     return getDistance(cinemaA) - getDistance(cinemaB)
