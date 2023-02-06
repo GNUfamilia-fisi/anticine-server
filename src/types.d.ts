@@ -191,6 +191,14 @@ interface CinemaBillboardRouteResponse extends RouteResponse {
   days: CinemaBillboardDayInformation[];
 }
 
+// -----------------------------------------------------------------------------
+// https://api.cinemark-peru.com/api/vista/data/movies/show?corporate_film_id={}
+// -----------------------------------------------------------------------------
+
+
+
 // api.url/cines/:cinema_id/billboard/:corporate_film_id
+
+
 
 // api.url/movies/:corporate_film_id

@@ -22,7 +22,7 @@ const THEATRES_ENDPOINT = 'https://api.cinemark-peru.com/api/vista/data/theatres
 
 class APICache {
   refreshing: boolean = false;
-  updateInterval = 1000 * 60 * 10; // 10 minutes
+  updateInterval = 1000 * 60 * 30; // 10 minutes
   all_cinemas: Promise<CinemaInformationWithCoords[]>
   confiterias: Promise<Record<city_name, Promise<CinemaConfiteriaInformation[]> | undefined>>;
   billboards: Promise<Record<cinema_id, Promise<CinemaBillboardDayInformation[]> | undefined>>;

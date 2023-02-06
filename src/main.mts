@@ -43,10 +43,10 @@ app.get('/cines/cercanos', async (req, res) => {
   const { state_prov: city, latitude, longitude } = location;
   const user_lat = Number(latitude);
   const user_lon = Number(longitude);
-  to_return.city = city;
-
+  
   // Only the cinemas of your city
-  available_cinemas = all_cinemas.filter(cinema => cinema.city === to_return.city);
+  available_cinemas = all_cinemas.filter(cinema => cinema.city === city);
+  to_return.city = city;
 
   if (available_cinemas.length === 0) {
     to_return.error = 'No hay cines disponibles en tu ciudad';
@@ -128,4 +128,12 @@ app.get('/cines/:cinema_id/confiteria', async (req, res) => {
   }
   to_return.confiteria = cachedConfiterias;
   res.send(to_return);
+});
+
+app.get('/cines/:cinema_id/cartelera/:corporate_film_id', (req, res) => {
+  res.send({ error: "No implementado", code: 404 });
+});
+
+app.get('/cines/:cinema_id/cartelera/:corporate_film_id/date/:date', (req, res) => {
+  res.send({ error: "No implementado", code: 404 });
 });
