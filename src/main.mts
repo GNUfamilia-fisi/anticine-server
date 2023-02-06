@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import express from 'express';
 import geoip from 'geoip-lite';
-import { APIcache } from './cache.mjs';
+import { blazinglyFastAPICache } from './cache.mjs';
 import { AllCinemasRouteResponse, CinemaConfiteriaRouteResponse, CinemaInformation, CinemaInformationWithCoords, NearCinemasRouteResponse, FetchedConsessionItemsResponse, CinemaBillboardRouteResponse } from './types';
 
 const app = express();
@@ -13,7 +13,7 @@ app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });
 
-app.get('/cines/cercanos', (req, res) => {
+app.get('/cines/cercanos', async (req, res) => {
   const to_return: NearCinemasRouteResponse = {
     city: null,
     cinemas: [],
@@ -21,14 +21,14 @@ app.get('/cines/cercanos', (req, res) => {
     code: 200,
     error: null
   };
-  
-  if (APIcache.all_cinemas.length === 0) {
-    to_return.error = 'Error al cargar los cines';
-    to_return.code = 503;
-    res.status(503).send(to_return);
-    return;
-  }
 
+  // if (APIcache.all_cinemas.length === 0) {
+  //   to_return.error = 'Error al cargar los cines';
+  //   to_return.code = 503;
+  //   res.status(503).send(to_return);
+  //   return;
+  // }
+  const all_cinemas = await blazinglyFastAPICache.getAllCinemas();
   let available_cinemas: CinemaInformationWithCoords[] = [];
 
   const location = geoip.lookup(req.ip);
@@ -43,7 +43,7 @@ app.get('/cines/cercanos', (req, res) => {
   to_return.city = city;
 
   // Only the cinemas of your city
-  available_cinemas = APIcache.all_cinemas.filter(cinema => cinema.city === to_return.city);
+  available_cinemas = all_cinemas.filter(cinema => cinema.city === to_return.city);
 
   if (available_cinemas.length === 0) {
     to_return.error = 'No hay cines disponibles en tu ciudad';
@@ -77,22 +77,22 @@ app.get('/cines/all', async (req, res) => {
     error: null
   };
 
-  if (APIcache.all_cinemas.length === 0) {
-    to_return.error = 'Error al cargar los cines';
-    to_return.code = 503;
-    res.status(503).send(to_return);
-    return;
-  }
+  // if (APIcache.all_cinemas.length === 0) {
+  //   to_return.error = 'Error al cargar los cines';
+  //   to_return.code = 503;
+  //   res.status(503).send(to_return);
+  //   return;
+  // }
 
-  to_return.cinemas = APIcache.all_cinemas.map((cinema): CinemaInformation => {
+  const all_cinemas = await blazinglyFastAPICache.getAllCinemas();
+  to_return.cinemas = all_cinemas.map((cinema): CinemaInformation => {
     const { coords, ...rest } = cinema;
     return rest;
   });
-
   res.send(to_return);
 });
   
-app.get('/cines/:cinema_id/cartelera', (req, res) => {
+app.get('/cines/:cinema_id/cartelera', async (req, res) => {
   const to_return: CinemaBillboardRouteResponse = {
     days: [],
     code: 200,
@@ -100,7 +100,8 @@ app.get('/cines/:cinema_id/cartelera', (req, res) => {
   }
   const { cinema_id } = req.params;
 
-  const billboard = APIcache.billboards[cinema_id];
+  // const billboard = APIcache.billboards[cinema_id];
+  const billboard = await blazinglyFastAPICache.getBillboard(cinema_id);
 
   if (!billboard) {
     to_return.code = 404;
@@ -122,16 +123,17 @@ app.get('/cines/:cinema_id/confiteria', async (req, res) => {
   const { cinema_id } = req.params;
 
   // Check if the cinema exists
-  const cinema = APIcache.all_cinemas.find(cinema => cinema.cinema_id === cinema_id);
-
-  if (!cinema) {
+  // const cinema = APIcache.all_cinemas.find(cinema => cinema.cinema_id === cinema_id);
+  const exists_cinema = blazinglyFastAPICache.existsCinema(cinema_id);
+  if (!exists_cinema) {
     to_return.code = 404;
     to_return.error = 'Cine no encontrado';
     res.status(404).send(to_return);
     return;
   }
+  const cachedConfiterias = await blazinglyFastAPICache.getConfiteria(cinema_id)
 
-  const cachedConfiterias = APIcache.confiterias[cinema.city];
+  // const cachedConfiterias = APIcache.confiterias[cinema.city];
 
   if (cachedConfiterias) {
     to_return.confiteria = cachedConfiterias;

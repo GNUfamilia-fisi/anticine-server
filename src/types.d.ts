@@ -131,7 +131,7 @@ interface FetchedBillboardItemForCinema {
   movies: Movie[];
 }
 
-type FetchedBillboardForCinema = FetchedBillboardItemForCinema[];
+type FetchedBillboardForCinemaReponse = FetchedBillboardItemForCinema[];
 
 interface Movie {
   title: string;
