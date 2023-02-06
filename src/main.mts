@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import express from 'express';
 import geoip from 'geoip-lite';
-import { APIcache, loadCache, updateIntervalms } from './cache.mjs';
+import { APIcache } from './cache.mjs';
 import { AllCinemasRouteResponse, CinemaConfiteriaRouteResponse, CinemaInformation, CinemaInformationWithCoords, NearCinemasRouteResponse, FetchedConsessionItemsResponse } from './types';
 
 const app = express();
@@ -41,7 +41,7 @@ app.get('/cines/cercanos', (req, res) => {
 
   const { ll, city } = location;
   to_return.city = city;
-  
+
   // Only the cinemas of your city
   available_cinemas = APIcache.all_cinemas.filter(cinema => cinema.city === to_return.city);
 
@@ -67,7 +67,7 @@ app.get('/cines/cercanos', (req, res) => {
   to_return.nearest_id = available_cinemas[0].cinema_id;
 
   res.send(to_return);
-  console.log(`hola ${req.ip}`);
+  console.log(`hola ${req.ip}`, { location });
 });
 
 app.get('/cines/all', async (req, res) => {
@@ -92,6 +92,11 @@ app.get('/cines/all', async (req, res) => {
   res.send(to_return);
 });
   
+app.get('/cines/:cinema_id/cartelera', (req, res) => {
+  const { cinema_id } = req.params;
+
+  res.send(APIcache.billboards[cinema_id]);
+});
 
 app.get('/cines/:cinema_id/confiteria', async (req, res) => {
   const to_return: CinemaConfiteriaRouteResponse = {
