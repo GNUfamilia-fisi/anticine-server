@@ -1,6 +1,6 @@
 import express from 'express';
 import geoip from 'geoip-lite';
-import { blazinglyFastAPICache } from './cache.mjs';
+import { blazinglyFastCache } from './cache.mjs';
 import { AllCinemasRouteResponse,
   CinemaConfiteriaRouteResponse,
   CinemaInformation,
@@ -27,7 +27,7 @@ app.get('/cines/cercanos', async (req, res) => {
     error: null
   };
 
-  const all_cinemas = await blazinglyFastAPICache.getAllCinemas();
+  const all_cinemas = await blazinglyFastCache.getAllCinemas();
   let available_cinemas: CinemaInformationWithCoords[] = [];
 
   const location = geoip.lookup(req.ip);
@@ -76,7 +76,7 @@ app.get('/cines/all', async (req, res) => {
     error: null
   };
 
-  const all_cinemas = await blazinglyFastAPICache.getAllCinemas();
+  const all_cinemas = await blazinglyFastCache.getAllCinemas();
   to_return.cinemas = all_cinemas.map((cinema): CinemaInformation => {
     const { coords, ...rest } = cinema;
     return rest;
@@ -93,7 +93,7 @@ app.get('/cines/:cinema_id/cartelera', async (req, res) => {
   const { cinema_id } = req.params;
 
   // const billboard = APIcache.billboards[cinema_id];
-  const billboard = await blazinglyFastAPICache.getBillboard(cinema_id);
+  const billboard = await blazinglyFastCache.getBillboard(cinema_id);
 
   if (!billboard) {
     to_return.code = 404;
@@ -115,7 +115,7 @@ app.get('/cines/:cinema_id/confiteria', async (req, res) => {
 
   // Check if the cinema exists
   // const cinema = APIcache.all_cinemas.find(cinema => cinema.cinema_id === cinema_id);
-  const cachedConfiterias = await blazinglyFastAPICache.getConfiteria(cinema_id)
+  const cachedConfiterias = await blazinglyFastCache.getConfiteria(cinema_id)
   if (!cachedConfiterias) {
     to_return.code = 404;
     to_return.error = 'Cine no encontrado';

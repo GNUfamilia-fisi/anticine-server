@@ -12,9 +12,17 @@ import {
 type city_name = string;
 type cinema_id = string;
 
-class Cache {
+const CONFITERIAS_ENDPOINT = (id: cinema_id) => (
+  `https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id=${id}`
+);
+const BILLBOARD_ENDPOINT = (id: cinema_id) => (
+  `https://api.cinemark-peru.com/api/vista/data/billboard?cinema_id=${id}`
+);
+const THEATRES_ENDPOINT = 'https://api.cinemark-peru.com/api/vista/data/theatres';
+
+class APICache {
   refreshing: boolean = false;
-  updateInterval = 1000 * 60 * 30;
+  updateInterval = 1000 * 60 * 10; // 10 minutes
   all_cinemas: Promise<CinemaInformationWithCoords[]>
   confiterias: Promise<Record<city_name, Promise<CinemaConfiteriaInformation[]> | undefined>>;
   billboards: Promise<Record<cinema_id, Promise<CinemaBillboardDayInformation[]> | undefined>>;
@@ -46,7 +54,7 @@ class Cache {
 
     this.all_cinemas = new Promise(async (resolve, reject) => {
       // load all cinemas
-      const response = await fetch('https://api.cinemark-peru.com/api/vista/data/theatres');
+      const response = await fetch(THEATRES_ENDPOINT);
       const data_theatres = (await response.json()) as FetchedTheatresResponse;
       const cinemas = data_theatres
         .map(c => c.cinemas).flat()
@@ -60,125 +68,71 @@ class Cache {
     });
 
     this.confiterias = new Promise(async (resolve, reject) => {
-      const confiterias_to_resolve: Record<string, Promise<CinemaConfiteriaInformation[]> | undefined> = {};
+      const confiterias_to_resolve: Record<
+        string, Promise<CinemaConfiteriaInformation[]> | undefined
+      > = {};
       const cinemas = await this.all_cinemas;
       // Fetching the confiteria for each cinema (without resolving)
-      const confiteriasPromises = cinemas.map(cinema => fetch(`https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id=${cinema.cinema_id}`)
+      const confiteriasPromises = cinemas
+        .map(cinema => fetch(CONFITERIAS_ENDPOINT(cinema.cinema_id))
         .then(res => res.json() as unknown as FetchedConsessionItemsResponse)
       );
       // const confiterias = consessionData.filter(isFulfilled).map(r => r.value);
       cinemas.forEach((cinema, i) => {
-        confiterias_to_resolve[cinema.cinema_id] = confiteriasPromises[i].then(confiteria => confiteria.ConcessionItems.map(item => ({
-          item_id: item.Id,
-          name: item.Description,
-          description: item.ExtendedDescription,
-          priceInCents: item.PriceInCents
-        })));
+        confiterias_to_resolve[cinema.cinema_id] = confiteriasPromises[i]
+          .then(confiteria => confiteria.ConcessionItems
+            .map(item => ({
+              item_id: item.Id,
+              name: item.Description,
+              description: item.ExtendedDescription,
+              priceInCents: item.PriceInCents
+            }))
+          );
       });
       // if (consession.ErrorDescription || consession.ResponseCode === 4) void(1);
       resolve(confiterias_to_resolve);
     });
 
     this.billboards = new Promise(async (resolve, reject) => {
-      const billboards_to_resolve: Record<cinema_id, Promise<CinemaBillboardDayInformation[]> | undefined> = {};
+      const billboards_to_resolve: Record<
+        cinema_id, Promise<CinemaBillboardDayInformation[]> | undefined
+      > = {};
       const cinemas = await this.all_cinemas;
       // Fetching the billboard of each cinema (without resolving)
-      const billboardPromises = cinemas.map(cinema => fetch(`https://api.cinemark-peru.com/api/vista/data/billboard?cinema_id=${cinema.cinema_id}`)
-        .then(res => res.json() as unknown as FetchedBillboardForCinemaReponse)
-      );
+      const billboardPromises = cinemas
+        .map(cinema => fetch(BILLBOARD_ENDPOINT(cinema.cinema_id))
+          .then(res => res.json() as unknown as FetchedBillboardForCinemaReponse)
+        );
       /* if (billboardData.length === 0) { APIcache.billboards[cinema.cinema_id] = null } */ // can be empty if not found
       cinemas.forEach((cinema, i) => {
-        billboards_to_resolve[cinema.cinema_id] = billboardPromises[i].then(billboard => billboard.map(billboard => ({
-          date: billboard.date,
-          movies: billboard.movies.map((movie): CinemaMovieInformation => ({
-            corporate_film_id: movie.corporate_film_id,
-            title: movie.title,
-            synopsis: movie.synopsis,
-            rating: movie.rating,
-            trailer_url: movie.trailer_url
-          }))
-        })));
+        billboards_to_resolve[cinema.cinema_id] = billboardPromises[i]
+          .then(billboard => billboard
+            // Extract just the necesarry information
+            .map(billboardItem => ({
+              date: billboardItem.date,
+              movies: billboardItem.movies.map((movie): CinemaMovieInformation => ({
+                corporate_film_id: movie.corporate_film_id,
+                title: movie.title,
+                synopsis: movie.synopsis,
+                rating: movie.rating,
+                trailer_url: movie.trailer_url
+              }))
+            }))
+          )
+          .catch(e => e);
       });
       resolve(billboards_to_resolve);
     });
     // load confiterias for each cinema
     console.log({ cache: this })
-    console.log('Blazingly fast cache refreshed');
+    console.log('Blazingly fast cache refreshed!');
     this.refreshing = false;
   }
 }
 
-// export const APIcache = {
-//   all_cinemas: [] as CinemaInformationWithCoords[],
-//   confiterias: {} as Record<city_name, CinemaConfiteriaInformation[] | undefined>,
-//   billboards: {} as Record<cinema_id, CinemaBillboardDayInformation[] | undefined | null>
-// };
-
-// export async function loadCache() {
-//   console.log('Refresing cache...');
-//   // load all cinemas
-//   const response = await fetch('https://api.cinemark-peru.com/api/vista/data/theatres');
-//   const data_theatres = (await response.json()) as FetchedTheatresResponse;
-//   const cinemas = data_theatres
-//     .map(c => c.cinemas).flat()
-//     .map((theatre): CinemaInformationWithCoords => ({
-//       cinema_id: theatre.ID,
-//       name: theatre.Name.replace(/cinemark/i, 'CineSEX'),
-//       city: theatre.City,
-//       coords: { lat: Number(theatre.Latitude), lon: Number(theatre.Longitude) }
-//   }));
-
-//   APIcache.all_cinemas = cinemas;
-
-//   // load confiterias for each cinema
-//   for (const cinema of APIcache.all_cinemas) {
-//     const consessionRresponse = await fetch(`https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id=${cinema.cinema_id}`);
-//     const consessionData = (await consessionRresponse.json()) as FetchedConsessionItemsResponse;
-//     if (consessionData.ErrorDescription || consessionData.ResponseCode === 4) {
-//       APIcache.confiterias[cinema.city] = [];
-//     }
-//     else {
-//       APIcache.confiterias[cinema.city] = consessionData.ConcessionItems.map(item => ({
-//         item_id: item.Id,
-//         name: item.Description,
-//         description: item.ExtendedDescription,
-//         priceInCents: item.PriceInCents
-//       }));
-//     }
- 
-//     const billboardResponse = await fetch(`https://api.cinemark-peru.com/api/vista/data/billboard?cinema_id=${cinema.cinema_id}`);
-//     const billboardData = (await billboardResponse.json()) as FetchedBillboardForCinemaReponse;
-//     if (billboardData.length === 0) {
-//       APIcache.billboards[cinema.cinema_id] = null
-//     }
-//     else {
-//       APIcache.billboards[cinema.cinema_id] = billboardData.map(billboard => ({
-//         date: billboard.date,
-//         movies: billboard.movies.map((movie): CinemaMovieInformation => ({
-//           corporate_film_id: movie.corporate_film_id,
-//           title: movie.title,
-//           synopsis: movie.synopsis,
-//           rating: movie.rating,
-//           trailer_url: movie.trailer_url
-//         }))
-//       }));
-//     }
-//   }
-
-//   console.log({APIcache})
-//   console.log('Cache refreshed');
-// }
-
-// export const updateIntervalms = 1000 * 60 * 30; // 30 minutes
-// loadCache();
-// setInterval(async () => {
-//   console.log('Updating cache...');
-//   await loadCache();
-// }, updateIntervalms);
-
-export const blazinglyFastAPICache = new Cache();
+export const blazinglyFastCache = new APICache();
 setInterval(
-  blazinglyFastAPICache.refreshCache,
-  blazinglyFastAPICache.updateInterval
+  blazinglyFastCache.refreshCache,
+  blazinglyFastCache.updateInterval
 );
 
