@@ -164,8 +164,6 @@ Si el `cinema_id` proporcionado no pertenece a ningún cine, devuelve:
 
 </details>
 
----
-
 ### GET `/cines/{cinema_id}/cartelera`
 
 Devuelve la cartelera de un cine ordenado según .
@@ -234,6 +232,8 @@ Si el `cinema_id` proporcionado no pertenece a ningún cine, devuelve:
 }
 ```
 
+</details>
+
 ### GET `/cines/{cinema_id}/cartelera/{corporate_film_id}`
 
 Obtiene la información de una película en particular y sus horarios
@@ -241,7 +241,7 @@ programados en un cine determinado.
 
 `Próximamente.`
 
-</details>
+---
 
 ## Sobre la API
 
