@@ -63,7 +63,7 @@ class APICache {
         .map(c => c.cinemas).flat()
         .map((theatre): CinemaInformationWithCoords => ({
           cinema_id: theatre.ID,
-          name: theatre.Name.replace(/cinemark/i, 'CineSEX'),
+          name: theatre.Name.replace(/cinemark/i, 'CiNEXT'),
           city: theatre.City,
           coords: { lat: Number(theatre.Latitude), lon: Number(theatre.Longitude) }
         }));
