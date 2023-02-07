@@ -8,7 +8,6 @@ import { AllCinemasRouteResponse,
   CinemaBillboardRouteResponse,
   FullBillboardForMovieRouteResponse,
   BillboardForOnlyOneMovie,
-  CinemaMovieInformation
 } from './types';
 import { ipLookupLocation } from './geolocation.mjs';
 
@@ -98,8 +97,7 @@ app.get('/cines/:cinema_id/confiteria', async (req, res) => {
   const { cinema_id } = req.params;
 
   // Check if the cinema exists
-  // const cinema = APIcache.all_cinemas.find(cinema => cinema.cinema_id === cinema_id);
-  const cachedConfiterias = await blazinglyFastCache.getConfiteria(cinema_id)
+  const cachedConfiterias = await blazinglyFastCache.getConfiteria(cinema_id);
   if (!cachedConfiterias) {
     to_return.code = 404;
     to_return.error = 'Cine no encontrado';
@@ -115,7 +113,7 @@ app.get('/cines/:cinema_id/cartelera', async (req, res) => {
     days: [],
     code: 200,
     error: null
-  }
+  };
   const { cinema_id } = req.params;
   const billboard = await blazinglyFastCache.getMinifiedBillboard(cinema_id);
 
@@ -134,13 +132,13 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
     days: [],
     code: 200,
     error: null
-  }
+  };
   const { cinema_id, corporate_film_id } = req.params;
   const full_billboard = await blazinglyFastCache.getFullBillboard(cinema_id);
 
   if (!full_billboard) {
     to_return.code = 404;
-    to_return.error = 'No se pudo encontrar la cartelera';
+    to_return.error = 'No se pudo encontrar el cine';
     res.send(to_return);
     return;
   }
@@ -158,6 +156,13 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
   });
 
   to_return.days = foundBillboards;
+
+  if (to_return.days.length === 0) {
+    to_return.code = 404;
+    to_return.error = 'No se pudo encontrar la cartelera';
+    res.send(to_return);
+    return;
+  }
 
   res.send(to_return);
 });
