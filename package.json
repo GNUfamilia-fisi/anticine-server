@@ -7,7 +7,7 @@
         "node": "16.16.0"
     },
     "scripts": {
-        "dev": "tsx watch src/main.mts",
+        "dev": "tsx watch src/main.ts",
         "build": "tsc",
         "start": "node dist/main.js"
     },

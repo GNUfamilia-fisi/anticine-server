@@ -174,3 +174,13 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
 
   res.send(to_return);
 });
+
+// Last route
+app.use((req, res) => {
+  const { method, url } = req;
+  res.status(404).send({
+    read_the_docs: 'https://github.com/GNUfamilia-fisi/CiNEXT-server#endpoints',
+    code: 404,
+    error: `No podemos encontrar la ruta ${method} ${url}`
+  });
+});
