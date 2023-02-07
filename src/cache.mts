@@ -84,7 +84,7 @@ class APICache {
             if (confiteria === null) return undefined;
             return confiteria.ConcessionItems.map(item => ({
               item_id: item.Id,
-              name: item.Description,
+              name: item.DescriptionAlt || item.Description,
               description: item.ExtendedDescription,
               priceInCents: item.PriceInCents
             } as CinemaConfiteriaInformation));
