@@ -1,5 +1,4 @@
 import express from 'express';
-import geoip from 'geoip-lite';
 import { blazinglyFastCache } from './cache.mjs';
 import { AllCinemasRouteResponse,
   CinemaConfiteriaRouteResponse,
