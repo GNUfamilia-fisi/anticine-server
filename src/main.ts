@@ -20,6 +20,14 @@ app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });
 
+app.get('/', (req, res) => {
+  res.send({
+    status: "CiNEXT status: OK 👍",
+    code: 200,
+    error: null
+  });
+});
+
 app.get('/cines/cercanos', async (req, res) => {
   const to_return: NearCinemasRouteResponse = {
     city: null,

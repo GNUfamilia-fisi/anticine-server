@@ -12,7 +12,7 @@ Responde con el estado de la API (o nunca responde).
 
 ```json
 {
-  "status": "OK",
+  "status": "CiNEXT status: OK 👍",
   "code": 200,
   "error": null
 }
