@@ -134,13 +134,13 @@ interface FetchedBillboardItemForCinema {
 type FetchedBillboardForCinemaReponse = FetchedBillboardItemForCinema[];
 
 interface Movie {
+  corporate_film_id: string;
+  film_HO_code: string; // shared with movie version
   title: string;
   trailer_url: string;
   graphic_url: string;
   runtime: string;
   rating: string;
-  film_HO_code: string;
-  corporate_film_id: string;
   synopsis: string;
   opening_date: string;
   cast: Cast[];
@@ -148,10 +148,10 @@ interface Movie {
 }
 
 interface Movieversion {
+  id: string;
   film_HOPK: string;
   title: string;
-  film_HO_code: string;
-  id: string;
+  film_HO_code: string; // here
   sessions: Session[];
 }
 
@@ -177,9 +177,11 @@ interface Cast {
 interface CinemaMovieInformation {
   corporate_film_id: string; // corporate_film_id
   title: string;
-  trailer_url: string;
-  rating: string;
   synopsis: string;
+  trailer_url: string;
+  poster_url: string;
+  duration: number; // in minutes
+  rating: string; // M14, APT (PG), etc
 }
 
 interface CinemaBillboardDayInformation {

@@ -114,8 +114,10 @@ class APICache {
                 corporate_film_id: movie.corporate_film_id,
                 title: movie.title,
                 synopsis: movie.synopsis,
+                trailer_url: movie.trailer_url,
+                poster_url: `https://cinemarkmedia.modyocdn.com/pe/300x400/${movie.corporate_film_id}.jpg`,
+                duration: Number(movie.runtime),
                 rating: movie.rating,
-                trailer_url: movie.trailer_url
               }))
             }))
           )
