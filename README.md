@@ -182,6 +182,8 @@ La cartelera solo contiene información básica de las películas. Para obtener
 información de los horarios y salas para esa película, refiérase
 [al siguiente endpoint](#get-cinescinema_idcarteleracorporate_film_id).
 
+Los rating conocidos hasta ahora son: `[ "M14", "AP (PG)"]`
+
 Respuesta exitosa:
 
 ```jsonc
@@ -197,8 +199,10 @@ Respuesta exitosa:
           planeta Pandora. Una vez que una amenaza familiar regresa para acabar
           con lo que se había iniciado anteriormente, Jake debe trabajar con
           Neytiri y el ejército de la raza Na'vi para proteger su planeta.",
-          "rating": "APT (PG)",
-          "trailer_url": "https://www.youtube.com/watch?v=96d3jsVWnOE"
+          "trailer_url": "https://www.youtube.com/watch?v=96d3jsVWnOE",
+          "poster_url": "https://cinemarkmedia.modyocdn.com/pe/300x400/89038.jpg",
+          "duration": 195, // en minutos
+          "rating": "APT (PG)"
         },
         {
           /*...*/
