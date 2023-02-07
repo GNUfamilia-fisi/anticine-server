@@ -1,12 +1,17 @@
 import { apifetch } from './services.mjs';
 import {
-  CinemaBillboardDayInformation,
+  BillboardDayForCinema,
   CinemaConfiteriaInformation,
   CinemaInformationWithCoords,
   CinemaMovieInformation,
   FetchedBillboardForCinemaReponse,
   FetchedConsessionItemsResponse,
-  FetchedTheatresResponse
+  FetchedTheatresResponse,
+  FullBillboardDaysForCinema,
+  MinifiedBillboardDayForCinema,
+  MovieCast,
+  MovieVersion,
+  SessionForMovieVersion
 } from "./types";
 
 type city_name = string;
@@ -27,8 +32,8 @@ class APICache {
   confiterias: Promise<
     Record<city_name, Promise<CinemaConfiteriaInformation[] | undefined>>
   >;
-  billboards: Promise<
-    Record<cinema_id, Promise<CinemaBillboardDayInformation[] | undefined>>
+  all_billboards: Promise<
+    Record<cinema_id, Promise<FullBillboardDaysForCinema | undefined>>
   >;
 
   constructor() {
@@ -47,10 +52,20 @@ class APICache {
     const resolvedConfiteria = await confiterias[city];
     return resolvedConfiteria;
   }
-  async getBillboard(cinema_id: cinema_id) {
-    const billboards = await this.billboards;
-    const resolvedBillboard = billboards[cinema_id];
+  async getFullBillboard(cinema_id: cinema_id) {
+    const billboards = await this.all_billboards;
+    const resolvedBillboard = await billboards[cinema_id];
     return resolvedBillboard;
+  }
+  async getMinifiedBillboard(cinema_id: cinema_id) {
+    const billboards = await this.getFullBillboard(cinema_id);
+    return billboards?.map((billboard): MinifiedBillboardDayForCinema => ({
+      date: billboard.date,
+      movies: billboard.movies.map(movie => {
+        const { cast, movie_versions, ...minified_movie } = movie;
+        return minified_movie;
+      })
+    }));
   }
   async refreshCache() {
     this.refreshing = true;
@@ -90,13 +105,12 @@ class APICache {
             } as CinemaConfiteriaInformation));
           });
       });
-      // if (consession.ErrorDescription || consession.ResponseCode === 4) void(1);
       resolve(confiterias_to_resolve);
     });
 
-    this.billboards = new Promise(async (resolve, reject) => {
+    this.all_billboards = new Promise(async (resolve, reject) => {
       const billboards_to_resolve: Record<
-        cinema_id, Promise<CinemaBillboardDayInformation[] | undefined>
+        cinema_id, Promise<FullBillboardDaysForCinema | undefined>
       > = {};
       const cinemas = await this.all_cinemas;
       // Fetching the billboard of each cinema (without resolving)
@@ -109,7 +123,7 @@ class APICache {
           .then(billboard => {
             if (billboard === null) return undefined;
             // Extract just the necesarry information
-            return billboard.map(billboardItem => ({
+            return billboard.map((billboardItem): BillboardDayForCinema => ({
               date: billboardItem.date,
               movies: billboardItem.movies.map((movie): CinemaMovieInformation => ({
                 corporate_film_id: movie.corporate_film_id,
@@ -119,8 +133,22 @@ class APICache {
                 poster_url: `https://cinemarkmedia.modyocdn.com/pe/300x400/${movie.corporate_film_id}.jpg`,
                 duration: Number(movie.runtime),
                 rating: movie.rating,
+                cast: movie.cast.map((cast): MovieCast => ({
+                  fullname: `${cast.FirstName.trimEnd()} ${cast.LastName}`,
+                  role: cast.PersonType
+                })),
+                movie_versions: movie.movie_versions.map((version): MovieVersion => ({
+                  movie_version_id: version.film_HOPK,
+                  title: version.title,
+                  sessions: version.sessions.map((session): SessionForMovieVersion => ({
+                    session_id: session.id,
+                    day: session.day,
+                    hour: session.hour,
+                    seats_available: session.seats_available,
+                  }))
+                }))
               }))
-            }) as CinemaBillboardDayInformation);
+            }));
           });
       });
       resolve(billboards_to_resolve);

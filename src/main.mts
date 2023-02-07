@@ -5,7 +5,10 @@ import { AllCinemasRouteResponse,
   CinemaInformation,
   CinemaInformationWithCoords,
   NearCinemasRouteResponse,
-  CinemaBillboardRouteResponse
+  CinemaBillboardRouteResponse,
+  FullBillboardForMovieRouteResponse,
+  BillboardForOnlyOneMovie,
+  CinemaMovieInformation
 } from './types';
 import { ipLookupLocation } from './geolocation.mjs';
 
@@ -31,7 +34,6 @@ app.get('/cines/cercanos', async (req, res) => {
   let available_cinemas: CinemaInformationWithCoords[] = [];
 
   const location = await ipLookupLocation(req.ip);
-  // const location = geoip.lookup(req.ip);
   if (!location) {
     to_return.error = 'No se pudo determinar la ubicación';
     to_return.code = 500;
@@ -42,7 +44,7 @@ app.get('/cines/cercanos', async (req, res) => {
   const { state_prov: city, latitude, longitude } = location;
   const user_lat = Number(latitude);
   const user_lon = Number(longitude);
-  
+
   // Only the cinemas of your city
   available_cinemas = all_cinemas.filter(cinema => cinema.city === city);
   to_return.city = city;
@@ -56,7 +58,7 @@ app.get('/cines/cercanos', async (req, res) => {
 
   const getDistance = (cinema: CinemaInformationWithCoords) => {
     let { lat: cine_lat, lon: cine_lon } = cinema.coords;
-    return  Math.sqrt((cine_lat - user_lat) ** 2 + (cine_lon - user_lon) ** 2);
+    return Math.sqrt((cine_lat - user_lat) ** 2 + (cine_lon - user_lon) ** 2);
   }
   available_cinemas = available_cinemas.sort((cinemaA, cinemaB) => {
     return getDistance(cinemaA) - getDistance(cinemaB)
@@ -86,27 +88,6 @@ app.get('/cines/all', async (req, res) => {
   });
   res.send(to_return);
 });
-  
-app.get('/cines/:cinema_id/cartelera', async (req, res) => {
-  const to_return: CinemaBillboardRouteResponse = {
-    days: [],
-    code: 200,
-    error: null
-  }
-  const { cinema_id } = req.params;
-
-  // const billboard = APIcache.billboards[cinema_id];
-  const billboard = await blazinglyFastCache.getBillboard(cinema_id);
-
-  if (!billboard) {
-    to_return.code = 404;
-    to_return.error = 'No se pudo encontrar la cartelera';
-    res.send(to_return);
-    return;
-  }
-  to_return.days = billboard;
-  res.send(to_return);
-});
 
 app.get('/cines/:cinema_id/confiteria', async (req, res) => {
   const to_return: CinemaConfiteriaRouteResponse = {
@@ -129,10 +110,54 @@ app.get('/cines/:cinema_id/confiteria', async (req, res) => {
   res.send(to_return);
 });
 
-app.get('/cines/:cinema_id/cartelera/:corporate_film_id', (req, res) => {
-  res.send({ error: "No implementado", code: 404 });
+app.get('/cines/:cinema_id/cartelera', async (req, res) => {
+  const to_return: CinemaBillboardRouteResponse = {
+    days: [],
+    code: 200,
+    error: null
+  }
+  const { cinema_id } = req.params;
+  const billboard = await blazinglyFastCache.getMinifiedBillboard(cinema_id);
+
+  if (!billboard) {
+    to_return.code = 404;
+    to_return.error = 'No se pudo encontrar la cartelera';
+    res.send(to_return);
+    return;
+  }
+  to_return.days = billboard;
+  res.send(to_return);
 });
 
-app.get('/cines/:cinema_id/cartelera/:corporate_film_id/date/:date', (req, res) => {
-  res.send({ error: "No implementado", code: 404 });
+app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
+  const to_return: FullBillboardForMovieRouteResponse = {
+    days: [],
+    code: 200,
+    error: null
+  }
+  const { cinema_id, corporate_film_id } = req.params;
+  const full_billboard = await blazinglyFastCache.getFullBillboard(cinema_id);
+
+  if (!full_billboard) {
+    to_return.code = 404;
+    to_return.error = 'No se pudo encontrar la cartelera';
+    res.send(to_return);
+    return;
+  }
+
+  const foundBillboards: BillboardForOnlyOneMovie[] = [];
+  full_billboard.forEach((full_billboard) => {
+    if (full_billboard.movies.some(movie => movie.corporate_film_id === corporate_film_id)) {
+      const found = full_billboard.movies.find(movie => movie.corporate_film_id === corporate_film_id);
+      if (!found) return;
+      foundBillboards.push({
+        date: full_billboard.date,
+        movie_versions: found.movie_versions
+      });
+    }
+  });
+
+  to_return.days = foundBillboards;
+
+  res.send(to_return);
 });
