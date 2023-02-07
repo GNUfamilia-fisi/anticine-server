@@ -1,5 +1,6 @@
 {
     "name": "gnu-familia-server",
+    "version": "1.0.0",
     "main": "main.ts",
     "type": "module",
     "scripts": {
