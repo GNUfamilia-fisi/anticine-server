@@ -197,10 +197,102 @@ interface CinemaBillboardRouteResponse extends RouteResponse {
 // https://api.cinemark-peru.com/api/vista/data/movies/show?corporate_film_id={}
 // -----------------------------------------------------------------------------
 
+interface FetchedMovieByFilmIDResponse {
+  Title: string;
+  Rating: string;
+  Synopsis: string;
+  OpeningDate: string;
+  RunTime: string;
+  TrailerUrl: string;
+  GraphicUrl: string;
+  CorporateFilmId: string;
+  Cast: Cast[];
+  days: Day[];
+}
 
+interface Day {
+  day: string;
+  theatres: Theatre[];
+}
 
-// api.url/cines/:cinema_id/billboard/:corporate_film_id
+interface Theatre {
+  id: string;
+  versions: Version[];
+}
 
+interface Version {
+  title: string;
+  FilmHOCode: string;
+  FilmHOPK: string;
+  showtimes: Showtime[];
+}
 
+interface Showtime {
+  SessionId: string;
+  day: string;
+  hour: string;
+  seats_available: number;
+}
+
+interface Cast {
+  ID: string;
+  FirstName: string;
+  LastName: string;
+  PersonType: string;
+}
+
+// Implementations:
 
 // api.url/movies/:corporate_film_id
+
+// ---------------------------------------------------------------------------------------
+// https://api.cinemark-peru.com/api/vista/data/billboard?cinema_id={}&movie_version_id={}
+// ---------------------------------------------------------------------------------------
+
+type FetchedMovieVersionDatesOfCinemaResponse = MovieVersionsOfDate[]
+
+interface MovieVersionsOfDate {
+  date: string;
+  movies: Movie[]; // only one
+}
+
+interface Movie {
+  title: string;
+  trailer_url: string;
+  graphic_url: string;
+  runtime: string;
+  rating: string;
+  film_HO_code: string;
+  corporate_film_id: string;
+  synopsis: string;
+  opening_date: string;
+  cast: Cast[];
+  movie_versions: Movieversion[];
+}
+
+interface Movieversion {
+  film_HOPK: string;
+  title: string;
+  film_HO_code: string;
+  id: string;
+  sessions: Session[];
+}
+
+interface Session {
+  id: string;
+  showtime: string;
+  day: string;
+  hour: string;
+  seats_available: number;
+}
+
+interface Cast {
+  ID: string;
+  FirstName: string;
+  LastName: string;
+  PersonType: string;
+}
+
+// Implementations:
+
+// api.url/cines/:cinema_id/billboard/:corporate_film_id
