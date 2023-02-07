@@ -13,7 +13,7 @@ interface IPLookup {
   longitude: string;
 }
 
-const MOCKED = true;
+const MOCKED = false;
 
 const mockResponse = (ip: string) => ({
   "ip": ip,
