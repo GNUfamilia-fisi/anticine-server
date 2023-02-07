@@ -5,7 +5,8 @@
     "type": "module",
     "scripts": {
         "dev": "tsx watch src/main.mts",
-        "build": "tsc"
+        "build": "tsc",
+        "start": "node dist/main.mjs"
     },
     "dependencies": {
         "express": "4.18.2",
