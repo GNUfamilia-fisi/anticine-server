@@ -9,7 +9,7 @@
     "scripts": {
         "dev": "tsx watch src/main.mts",
         "build": "tsc",
-        "start": "node dist/main.mjs"
+        "start": "node dist/main.js"
     },
     "dependencies": {
         "express": "4.18.2",
