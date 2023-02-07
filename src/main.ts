@@ -1,5 +1,5 @@
 import express from 'express';
-import { blazinglyFastCache } from './cache.mjs';
+import { blazinglyFastCache } from './cache.js';
 import { AllCinemasRouteResponse,
   CinemaConfiteriaRouteResponse,
   CinemaInformation,
@@ -8,8 +8,8 @@ import { AllCinemasRouteResponse,
   CinemaBillboardRouteResponse,
   FullBillboardForMovieRouteResponse,
   BillboardForOnlyOneMovie,
-} from './types';
-import { ipLookupLocation } from './geolocation.mjs';
+} from './types.js';
+import { ipLookupLocation } from './geolocation.js';
 
 const app = express();
 app.set('trust proxy', true);

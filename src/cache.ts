@@ -1,4 +1,4 @@
-import { apifetch } from './services.mjs';
+import { apifetch } from './services.js';
 import {
   BillboardDayForCinema,
   CinemaConfiteriaInformation,
@@ -12,7 +12,7 @@ import {
   MovieCast,
   MovieVersion,
   SessionForMovieVersion
-} from "./types";
+} from './types.js';
 
 type city_name = string;
 type cinema_id = string;
