@@ -78,7 +78,6 @@ class APICache {
       const confiteriasPromises = cinemas
         .map(cinema => apifetch<FetchedConsessionItemsResponse>(CONFITERIAS_ENDPOINT(cinema.cinema_id))
       );
-      // const confiterias = consessionData.filter(isFulfilled).map(r => r.value);
       cinemas.forEach((cinema, i) => {
         confiterias_to_resolve[cinema.cinema_id] = confiteriasPromises[i]
           .then(confiteria => {
@@ -102,14 +101,9 @@ class APICache {
       const cinemas = await this.all_cinemas;
       // Fetching the billboard of each cinema (without resolving)
       
-      // const billboardPromises = cinemas
-      //   .map(cinema => fetch(BILLBOARD_ENDPOINT(cinema.cinema_id))
-      //     .then(res => res.json() as unknown as FetchedBillboardForCinemaReponse)
-      //   );
       const billboardPromises = cinemas
         .map(cinema => apifetch<FetchedBillboardForCinemaReponse>(BILLBOARD_ENDPOINT(cinema.cinema_id))
       );
-      /* if (billboardData.length === 0) { APIcache.billboards[cinema.cinema_id] = null } */ // can be empty if not found
       cinemas.forEach((cinema, i) => {
         billboards_to_resolve[cinema.cinema_id] = billboardPromises[i]
           .then(billboard => {
