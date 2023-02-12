@@ -1,6 +1,7 @@
 
 <p align="center">
   <h1 align="center">Anticine server</h1>
+  <img src="https://raw.githubusercontent.com/GNUfamilia-fisi/anticine/main/media/Anticine.png"/>
   <p align="center">
     Server for the
     <a href="https://github.com/GNUfamilia-fisi/anticine">
@@ -9,7 +10,6 @@
   </p>
 </p>
 
-<img src="https://raw.githubusercontent.com/GNUfamilia-fisi/anticine/main/media/Anticine.png"/>
 
 ## Endpoints
 
