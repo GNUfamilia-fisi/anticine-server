@@ -2,11 +2,10 @@
 <p align="center">
   <h1 align="center">Anticine server</h1>
   <p align="center">
-    <code>Server for the
-      <a href="https://github.com/GNUfamilia-fisi/anticine">
-        Anticine emulator program
-      </a>
-    </code>
+    Server for the
+    <a href="https://github.com/GNUfamilia-fisi/anticine">
+      Anticine emulator program
+    </a>
   </p>
 </p>
 
