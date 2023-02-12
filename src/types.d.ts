@@ -241,8 +241,12 @@ type MinifiedBillboardDayForCinema = {
   movies: MinifiedCinemaMovieInformation[];
 }
 
+// Separado por fechas, pero actualmente no se usa
 interface CinemaBillboardRouteResponse extends RouteResponse {
   days: MinifiedBillboardDayForCinema[];
+}
+interface CinemaAllMoviesFromBillboardRouteResponse extends RouteResponse {
+  movies: MinifiedCinemaMovieInformation[];
 }
 
 // -----------------------------------------------------------------------------

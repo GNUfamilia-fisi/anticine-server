@@ -5,9 +5,9 @@ import { AllCinemasRouteResponse,
   CinemaInformation,
   CinemaInformationWithCoords,
   NearCinemasRouteResponse,
-  CinemaBillboardRouteResponse,
   FullBillboardForMovieRouteResponse,
   BillboardForOnlyOneMovie,
+  CinemaAllMoviesFromBillboardRouteResponse,
 } from './types.js';
 import { ipLookupLocation } from './geolocation.js';
 
@@ -118,13 +118,13 @@ app.get('/cines/:cinema_id/confiteria', async (req, res) => {
 });
 
 app.get('/cines/:cinema_id/cartelera', async (req, res) => {
-  const to_return: CinemaBillboardRouteResponse = {
-    days: [],
+  const to_return: CinemaAllMoviesFromBillboardRouteResponse = {
+    movies: [],
     code: 200,
     error: null
   };
   const { cinema_id } = req.params;
-  const billboard = await blazinglyFastCache.getMinifiedBillboard(cinema_id);
+  const billboard = await blazinglyFastCache.getAllMoviesFromBillboard(cinema_id);
 
   if (!billboard) {
     to_return.code = 404;
@@ -132,7 +132,7 @@ app.get('/cines/:cinema_id/cartelera', async (req, res) => {
     res.send(to_return);
     return;
   }
-  to_return.days = billboard;
+  to_return.movies = billboard;
   res.send(to_return);
 });
 

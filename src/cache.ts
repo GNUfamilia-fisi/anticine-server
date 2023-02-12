@@ -9,6 +9,7 @@ import {
   FetchedTheatresResponse,
   FullBillboardDaysForCinema,
   MinifiedBillboardDayForCinema,
+  MinifiedCinemaMovieInformation,
   MovieCast,
   MovieVersion,
   SessionForMovieVersion
@@ -57,6 +58,7 @@ class APICache {
     const resolvedBillboard = await billboards[cinema_id];
     return resolvedBillboard;
   }
+  // Currently unused
   async getMinifiedBillboard(cinema_id: cinema_id) {
     const billboards = await this.getFullBillboard(cinema_id);
     return billboards?.map((billboard): MinifiedBillboardDayForCinema => ({
@@ -66,6 +68,19 @@ class APICache {
         return minified_movie;
       })
     }));
+  }
+  async getAllMoviesFromBillboard(cinema_id: cinema_id) {
+    const billboards = await this.getFullBillboard(cinema_id);
+    return billboards?.map(billboard => billboard.movies)
+      .flat().map((movie): MinifiedCinemaMovieInformation => ({
+        title: movie.title,
+        poster_url: movie.poster_url,
+        duration: movie.duration,
+        rating: movie.rating,
+        corporate_film_id: movie.corporate_film_id,
+        trailer_url: movie.trailer_url,
+        synopsis: movie.synopsis,
+    })).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
   }
   async refreshCache() {
     this.refreshing = true;
@@ -128,7 +143,7 @@ class APICache {
               movies: billboardItem.movies.map((movie): CinemaMovieInformation => ({
                 corporate_film_id: movie.corporate_film_id,
                 title: movie.title,
-                synopsis: movie.synopsis,
+                synopsis: movie.synopsis.replaceAll(/\s{2,}|\t|\r|\s+$/mg, ''),
                 trailer_url: movie.trailer_url,
                 poster_url: `https://cinemarkmedia.modyocdn.com/pe/300x400/${movie.corporate_film_id}.jpg`,
                 duration: Number(movie.runtime),
