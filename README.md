@@ -178,12 +178,11 @@ Devuelve la cartelera de un cine ordenado según .
 <details>
     <summary>Detalles</summary>
 
-Los días (`days`) contienen una serie de objetos con fechas "`date`".
-Estas fechas comienzan desde el día actual y avanzan de uno en uno (véase el
-ejemplo).
+La cartelera es solo una lista de películas que se están proyectando en ese
+cine, ordenadas según fecha de proximidad.
 
-Cada día (`day`) contiene la lista de películas (`movies`) que van a ser
-proyectadas en el cinema elegido.
+Esta lista normalmente contiene hasta 12 días de programación, sin
+embargo, no devuelve información respecto a sus días ni horarios.
 
 La cartelera solo contiene información básica de las películas. Para obtener
 información de los horarios y salas para esa película, refiérase
@@ -195,38 +194,23 @@ Respuesta exitosa:
 
 ```jsonc
 {
-  "days": [
-    {
-      "date": "2023-02-06",
-      "movies": [
-        {
-          "corporate_film_id": "89038",
-          "title": "AVATAR 2 EL CAMINO DEL AGUA",
-          "synopsis": "Jake Sully vive con su nueva familia formada en el
-          planeta Pandora. Una vez que una amenaza familiar regresa para acabar
-          con lo que se había iniciado anteriormente, Jake debe trabajar con
-          Neytiri y el ejército de la raza Na'vi para proteger su planeta.",
-          "trailer_url": "https://www.youtube.com/watch?v=96d3jsVWnOE",
-          "poster_url": "https://cinemarkmedia.modyocdn.com/pe/300x400/89038.jpg",
-          "duration": 195, // en minutos
-          "rating": "APT (PG)"
-        },
-        {
-          /*...*/
-        },
-        // ...
-      ]
-    },
-    {
-      "date": "2023-02-07",
-      "movies": [/*...*/]
-    },
-    {
-      "date": "2023-02-08",
-      "movies": [/*...*/]
-    },
-    }
-    // ...
+  "movies": [
+      {
+        "corporate_film_id": "89038",
+        "title": "AVATAR 2 EL CAMINO DEL AGUA",
+        "synopsis": "Jake Sully vive con su nueva familia formada en el
+        planeta Pandora. Una vez que una amenaza familiar regresa para acabar
+        con lo que se había iniciado anteriormente, Jake debe trabajar con
+        Neytiri y el ejército de la raza Na'vi para proteger su planeta.",
+        "trailer_url": "https://www.youtube.com/watch?v=96d3jsVWnOE",
+        "poster_url": "https://cinemarkmedia.modyocdn.com/pe/300x400/89038.jpg",
+        "duration": 195, // en minutos
+        "rating": "APT (PG)"
+      },
+      {
+        /*...*/
+      },
+      // ...
   ],
   "code": 200,
   "error": null
