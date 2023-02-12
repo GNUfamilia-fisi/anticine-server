@@ -1,6 +1,14 @@
-# Anticine `server`
 
-Server for the Anticine emulator program.
+<p align="center">
+  <h1 align="center">Anticine server</h1>
+  <p align="center">
+    <code>Server for the
+      <a href="https://github.com/GNUfamilia-fisi/anticine">
+        Anticine emulator program
+      </a>
+    </code>
+  </p>
+</p>
 
 <img src="https://raw.githubusercontent.com/GNUfamilia-fisi/anticine/main/media/Anticine.png"/>
 
