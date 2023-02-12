@@ -21,8 +21,9 @@ app.listen(PORT, () => {
 });
 
 app.get('/', (req, res) => {
+  console.log(req.ip)
   res.send({
-    status: "CiNEXT status: OK 👍",
+    status: "Anticine status: OK 👍",
     code: 200,
     error: null
   });
@@ -179,7 +180,7 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
 app.use((req, res) => {
   const { method, url } = req;
   res.status(404).send({
-    read_the_docs: 'https://github.com/GNUfamilia-fisi/CiNEXT-server#endpoints',
+    read_the_docs: 'https://github.com/GNUfamilia-fisi/anticine-server#endpoints',
     code: 404,
     error: `No podemos encontrar la ruta ${method} ${url}`
   });

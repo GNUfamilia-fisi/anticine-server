@@ -1,8 +1,8 @@
-# CiNEXT `server`
+# Anticine `server`
 
-Server for the CiNEXT emulator program.
+Server for the Anticine emulator program.
 
-<img src="https://raw.githubusercontent.com/GNUfamilia-fisi/CiNEXT/main/media/CiNEXT%20logo.png"/>
+<img src="https://raw.githubusercontent.com/GNUfamilia-fisi/anticine/main/media/Anticine.png"/>
 
 ## Endpoints
 
@@ -12,7 +12,7 @@ Responde con el estado de la API (o nunca responde).
 
 ```json
 {
-  "status": "CiNEXT status: OK 👍",
+  "status": "Anticine status: OK 👍",
   "code": 200,
   "error": null
 }
@@ -32,12 +32,12 @@ Respuesta exitosa:
   "cinemas": [
     {
       "cinema_id": "2705",
-      "name": "CiNEXT Gamarra",
+      "name": "Anticine Gamarra",
       "city": "Lima"
     },
     {
       "cinema_id": "2702",
-      "name": "CiNEXT Huancayo",
+      "name": "Anticine Huancayo",
       "city": "Huancayo"
     },
     // ...
@@ -70,7 +70,7 @@ Respuesta exitosa:
   "cinemas": [
     {
       "cinema_id": "2705",
-      "name": "CiNEXT Gamarra",
+      "name": "Anticine Gamarra",
       "city": "Lima"
     },
     // ...
@@ -250,4 +250,4 @@ programados en un cine determinado.
 ## Sobre la API
 
 HTTP API desarrollada con [Express](https://expressjs.com/) para
-[CiNEXT](https://github.com/GNUfamilia-fisi/CiNEXT).
+[Anticine](https://github.com/GNUfamilia-fisi/anticine).
