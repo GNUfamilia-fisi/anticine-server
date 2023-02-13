@@ -10,7 +10,7 @@ import { AllCinemasRouteResponse,
   BillboardForOnlyOneMovie,
   CinemaAllMoviesFromBillboardRouteResponse,
 } from './types.js';
-import { ipLookupLocation } from './geolocation.js';
+import { ipLookupLocation } from './services.js';
 
 dotenv.config();
 const app = express();

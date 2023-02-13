@@ -2,10 +2,15 @@ import fetch from 'node-fetch';
 import runes from 'runes';
 import { Configuration, OpenAIApi } from 'openai';
 
-export const { OPENAI_TOKEN, GEOLOCATION_APIKEY } = process.env;
+const { OPENAI_TOKEN, GEOLOCATION_APIKEY } = process.env;
 
 if (!OPENAI_TOKEN) throw new Error('OPENAI_TOKEN not set');
 if (!GEOLOCATION_APIKEY) throw new Error('GEOLOCATION_APIKEY not set');
+
+const OPENAI_MOCKED = true;
+const GEOLOCATION_MOCKED = true;
+
+/* ------- CINEMA API ------- */
 
 // Endpoints
 export const CONFITERIAS_ENDPOINT = (cinema_id: string) => (
@@ -41,17 +46,14 @@ export async function apifetch<T>(url: string, method: string = 'GET') {
   }
 }
 
-const configuration = new Configuration({
-  apiKey: OPENAI_TOKEN,
-});
+/* ------- OPENAI API ------- */
+
+const configuration = new Configuration({ apiKey: OPENAI_TOKEN });
 const openai = new OpenAIApi(configuration);
 
-type movie = {
-  title: string,
-  description: string,
-}
+type openaiMovie = { title: string, description: string, }
 
-const movie_prompt = (movie: movie) => (
+const movie_prompt = (movie: openaiMovie) => (
 `This is a game! Given the title and descripcion of two movies, represent each of them with 5 flat emojis.
 
 ----------
@@ -67,6 +69,7 @@ ${movie.description}
 five flat emojis:`);
 
 export async function movieToEmojisIA({ title, description } : { title: string, description: string }) {
+  if (OPENAI_MOCKED) return '⛄🏰👸🏔️🥶';
   const response = await openai.createCompletion({
     model: "text-davinci-002",
     prompt: movie_prompt({ title, description }),
@@ -79,4 +82,43 @@ export async function movieToEmojisIA({ title, description } : { title: string, 
 
   const emojis = response.data.choices[0].text.trim();
   return runes.substr(emojis, 0, 5);
+}
+
+/* ------- GEOLOCATION API ------- */
+
+interface IPLookup {
+  ip: string;
+  country_code2: string;
+  country_code3: string;
+  country_name: string;
+  state_prov: string;
+  district: string;
+  city: string;
+  zipcode: string;
+  latitude: string;
+  longitude: string;
+}
+
+const mockResponse = (ip: string) => ({
+  "ip": ip,
+  "country_code2": "PE",
+  "country_code3": "PER",
+  "country_name": "Peru",
+  "state_prov": "Lima",
+  "district": "",
+  "city": "Lima",
+  "zipcode": "15048",
+  "latitude": "-12.10925",
+  "longitude": "-77.01641"
+});
+
+export async function ipLookupLocation(ip: string) {
+  if (GEOLOCATION_MOCKED) return mockResponse(ip);
+
+  const data = await fetch(
+    `https://api.ipgeolocation.io/ipgeo?apiKey=${GEOLOCATION_APIKEY}&ip=${ip}&fields=geo`
+  );
+  const lookup = (await data.json()) as IPLookup;
+
+  return lookup;
 }
