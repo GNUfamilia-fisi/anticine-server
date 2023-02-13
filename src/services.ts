@@ -1,6 +1,8 @@
+import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import runes from 'runes';
 import { Configuration, OpenAIApi } from 'openai';
+dotenv.config();
 
 const { OPENAI_TOKEN, GEOLOCATION_APIKEY } = process.env;
 

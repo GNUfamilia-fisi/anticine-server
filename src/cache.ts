@@ -1,5 +1,11 @@
-import { apifetch, BILLBOARD_ENDPOINT, CONFITERIAS_ENDPOINT, movieToEmojisIA, THEATRES_ENDPOINT } from './services.js';
 import { isPromiseFullfield } from './utils.js';
+import {
+  apifetch,
+  BILLBOARD_ENDPOINT,
+  CONFITERIAS_ENDPOINT,
+  movieToEmojisIA,
+  THEATRES_ENDPOINT
+} from './services.js';
 import {
   BillboardDayForCinema,
   CinemaConfiteriaInformation,
@@ -206,6 +212,7 @@ class APICache {
 }
 
 export const blazinglyFastCache = new APICache();
+
 setInterval(
   blazinglyFastCache.refreshCache,
   blazinglyFastCache.updateInterval

@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import express from 'express';
 import { blazinglyFastCache } from './cache.js';
 import { AllCinemasRouteResponse,
@@ -12,7 +11,6 @@ import { AllCinemasRouteResponse,
 } from './types.js';
 import { ipLookupLocation } from './services.js';
 
-dotenv.config();
 const app = express();
 app.set('trust proxy', true);
 
