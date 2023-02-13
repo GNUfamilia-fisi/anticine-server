@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { GEOLOCATION_APIKEY } from './services.js';
 
 interface IPLookup {
   ip: string;
@@ -31,7 +32,9 @@ const mockResponse = (ip: string) => ({
 export async function ipLookupLocation(ip: string) {
   if (MOCKED) return mockResponse(ip);
 
-  const data = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=00289eef0e2048bfafa1467f633764bb&ip=${ip}&fields=geo`);
+  const data = await fetch(
+    `https://api.ipgeolocation.io/ipgeo?apiKey=${GEOLOCATION_APIKEY}&ip=${ip}&fields=geo`
+  );
   const lookup = (await data.json()) as IPLookup;
 
   return lookup;

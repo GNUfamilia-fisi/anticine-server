@@ -1,6 +1,22 @@
 import fetch from 'node-fetch';
+import runes from 'runes';
+import { Configuration, OpenAIApi } from 'openai';
 
-const headers = {
+export const { OPENAI_TOKEN, GEOLOCATION_APIKEY } = process.env;
+
+if (!OPENAI_TOKEN) throw new Error('OPENAI_TOKEN not set');
+if (!GEOLOCATION_APIKEY) throw new Error('GEOLOCATION_APIKEY not set');
+
+// Endpoints
+export const CONFITERIAS_ENDPOINT = (cinema_id: string) => (
+  `https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id=${cinema_id}`
+);
+export const BILLBOARD_ENDPOINT = (cinema_id: string) => (
+  `https://api.cinemark-peru.com/api/vista/data/billboard?cinema_id=${cinema_id}`
+);
+export const THEATRES_ENDPOINT = 'https://api.cinemark-peru.com/api/vista/data/theatres';
+
+const apiHeaders = {
   "accept": "*/*",
   "accept-encoding": "gzip, deflate, br",
   "accept-language": "en-US,en;q=0.9,es;q=0.8",
@@ -16,11 +32,51 @@ const headers = {
 
 export async function apifetch<T>(url: string, method: string = 'GET') {
   try {
-    const response = await fetch(url, { method, headers });
+    const response = await fetch(url, { method, headers: apiHeaders });
     const data = (await response.json()) as T;
     return data;
   }
   catch {
     return null;
   }
+}
+
+const configuration = new Configuration({
+  apiKey: OPENAI_TOKEN,
+});
+const openai = new OpenAIApi(configuration);
+
+type movie = {
+  title: string,
+  description: string,
+}
+
+const movie_prompt = (movie: movie) => (
+`This is a game! Given the title and descripcion of two movies, represent each of them with 5 flat emojis.
+
+----------
+1) FROZEN:
+Anna se une a Kristoff, un alpinista extremo, y a su reno, Sven, en un viaje épico donde se toparán con místicos Trolls, un divertido muñeco de nieve llamado Olaf, y temperaturas extremas, en una aventura por hallar a su hermana: la princesa Elsa.
+----------
+five flat emojis: ⛄🏰👸🏔️🥶
+
+----------
+2) ${movie.title}:
+${movie.description}
+----------
+five flat emojis:`);
+
+export async function movieToEmojisIA({ title, description } : { title: string, description: string }) {
+  const response = await openai.createCompletion({
+    model: "text-davinci-002",
+    prompt: movie_prompt({ title, description }),
+    temperature: 0.27,
+    max_tokens: 500,
+    top_p: 1,
+    frequency_penalty: 0,
+    presence_penalty: 0,
+  });
+
+  const emojis = response.data.choices[0].text.trim();
+  return runes.substr(emojis, 0, 5);
 }

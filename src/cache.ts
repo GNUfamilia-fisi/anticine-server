@@ -1,4 +1,5 @@
-import { apifetch } from './services.js';
+import { apifetch, BILLBOARD_ENDPOINT, CONFITERIAS_ENDPOINT, movieToEmojisIA, THEATRES_ENDPOINT } from './services.js';
+import { isPromiseFullfield } from './utils.js';
 import {
   BillboardDayForCinema,
   CinemaConfiteriaInformation,
@@ -17,24 +18,21 @@ import {
 
 type city_name = string;
 type cinema_id = string;
-
-const CONFITERIAS_ENDPOINT = (id: cinema_id) => (
-  `https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id=${id}`
-);
-const BILLBOARD_ENDPOINT = (id: cinema_id) => (
-  `https://api.cinemark-peru.com/api/vista/data/billboard?cinema_id=${id}`
-);
-const THEATRES_ENDPOINT = 'https://api.cinemark-peru.com/api/vista/data/theatres';
+type corporate_film_id = string;
 
 class APICache {
   refreshing: boolean = false;
-  updateInterval = 1000 * 60 * 30; // 10 minutes
+  updateInterval = 1000 * 60 * 60; // 1 hour
+
   all_cinemas: Promise<CinemaInformationWithCoords[]>
   confiterias: Promise<
     Record<city_name, Promise<CinemaConfiteriaInformation[] | undefined>>
   >;
   all_billboards: Promise<
     Record<cinema_id, Promise<FullBillboardDaysForCinema | undefined>>
+  >;
+  emoji_movie_cache: Promise<
+    Record<corporate_film_id, Promise<string | undefined>>
   >;
 
   constructor() {
@@ -58,6 +56,19 @@ class APICache {
     const resolvedBillboard = await billboards[cinema_id];
     return resolvedBillboard;
   }
+  async getAllMoviesFromBillboard(cinema_id: cinema_id) {
+    const billboards = await this.getFullBillboard(cinema_id);
+    return billboards?.map(billboard => billboard.movies)
+    .flat().map((movie): MinifiedCinemaMovieInformation => ({
+      title: movie.title,
+      poster_url: movie.poster_url,
+      duration: movie.duration,
+      rating: movie.rating,
+      corporate_film_id: movie.corporate_film_id,
+      trailer_url: movie.trailer_url,
+      synopsis: movie.synopsis,
+    })).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
+  }
   // Currently unused
   async getMinifiedBillboard(cinema_id: cinema_id) {
     const billboards = await this.getFullBillboard(cinema_id);
@@ -69,24 +80,11 @@ class APICache {
       })
     }));
   }
-  async getAllMoviesFromBillboard(cinema_id: cinema_id) {
-    const billboards = await this.getFullBillboard(cinema_id);
-    return billboards?.map(billboard => billboard.movies)
-      .flat().map((movie): MinifiedCinemaMovieInformation => ({
-        title: movie.title,
-        poster_url: movie.poster_url,
-        duration: movie.duration,
-        rating: movie.rating,
-        corporate_film_id: movie.corporate_film_id,
-        trailer_url: movie.trailer_url,
-        synopsis: movie.synopsis,
-    })).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
-  }
   async refreshCache() {
     this.refreshing = true;
     console.log('Refresing Blazingly fast cache...');
 
-    this.all_cinemas = new Promise(async (resolve, reject) => {
+    this.all_cinemas = new Promise(async (resolve, _reject) => {
       // load all cinemas
       const data_theatres = (await apifetch<FetchedTheatresResponse>(THEATRES_ENDPOINT)) || [];
       const cinemas = data_theatres
@@ -100,7 +98,7 @@ class APICache {
       resolve(cinemas);
     });
 
-    this.confiterias = new Promise(async (resolve, reject) => {
+    this.confiterias = new Promise(async (resolve, _reject) => {
       const confiterias_to_resolve: Record<
         string, Promise<CinemaConfiteriaInformation[] | undefined>
       > = {};
@@ -123,16 +121,17 @@ class APICache {
       resolve(confiterias_to_resolve);
     });
 
-    this.all_billboards = new Promise(async (resolve, reject) => {
+    this.all_billboards = new Promise(async (resolve, _reject) => {
       const billboards_to_resolve: Record<
         cinema_id, Promise<FullBillboardDaysForCinema | undefined>
       > = {};
       const cinemas = await this.all_cinemas;
+
       // Fetching the billboard of each cinema (without resolving)
-      
-      const billboardPromises = cinemas
-        .map(cinema => apifetch<FetchedBillboardForCinemaReponse>(BILLBOARD_ENDPOINT(cinema.cinema_id))
+      const billboardPromises = cinemas.map(
+          cinema => apifetch<FetchedBillboardForCinemaReponse>(BILLBOARD_ENDPOINT(cinema.cinema_id))
       );
+
       cinemas.forEach((cinema, i) => {
         billboards_to_resolve[cinema.cinema_id] = billboardPromises[i]
           .then(billboard => {
@@ -168,8 +167,39 @@ class APICache {
       });
       resolve(billboards_to_resolve);
     });
-    // load confiterias for each cinema
-    console.log({ cache: this })
+
+    this.emoji_movie_cache = new Promise(async (resolve, _reject) => {
+      const fetched_billboards = await this.all_billboards;
+      const billboards_promises = Object.values(fetched_billboards);
+      const billboards = (
+        await Promise.allSettled(billboards_promises)
+      ).filter(isPromiseFullfield).map(promise => promise.value);
+
+      const emojis_to_resolve: Record<
+        corporate_film_id, Promise<string | undefined>
+      > = {};
+
+      billboards
+        .forEach(billboard => billboard
+          .map(billboard_day => billboard_day.movies)
+          .flat()
+          .forEach(movie => {
+            if (emojis_to_resolve[movie.corporate_film_id]) return;
+            emojis_to_resolve[movie.corporate_film_id] = movieToEmojisIA({
+              title: movie.title,
+              description: movie.synopsis,
+            });
+          })
+      );
+      resolve(emojis_to_resolve);
+    });
+
+    console.log({
+      all_cinemas: this.all_cinemas,
+      confiterias: this.confiterias,
+      all_billboards: this.all_billboards,
+      emoji_movie_cache: this.emoji_movie_cache
+    });
     console.log('Blazingly fast cache refreshed!');
     this.refreshing = false;
   }
