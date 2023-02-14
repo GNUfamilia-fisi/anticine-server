@@ -99,6 +99,7 @@ class APICache {
           cinema_id: theatre.ID,
           name: theatre.Name.replace(/cinemark/i, 'Anticine'),
           city: theatre.City,
+          address: theatre.Address1,
           coords: { lat: Number(theatre.Latitude), lon: Number(theatre.Longitude) }
         }));
       resolve(cinemas);

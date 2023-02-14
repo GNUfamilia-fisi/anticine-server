@@ -40,11 +40,13 @@ Respuesta exitosa:
     {
       "cinema_id": "2705",
       "name": "Anticine Gamarra",
+      "address": "Avenida Aviación 950 La Victoria, LIMA 13",
       "city": "Lima"
     },
     {
       "cinema_id": "2702",
       "name": "Anticine Huancayo",
+      "address": "Av. Ferrocarril 146 - 150 esquina con prolongación San Carlos",
       "city": "Huancayo"
     },
     // ...
@@ -78,6 +80,7 @@ Respuesta exitosa:
     {
       "cinema_id": "2705",
       "name": "Anticine Gamarra",
+      "address": "Avenida Aviación 950 La Victoria, LIMA 13",
       "city": "Lima"
     },
     // ...

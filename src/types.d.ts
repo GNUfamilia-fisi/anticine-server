@@ -44,6 +44,7 @@ interface FetchedCinema {
 
 interface CinemaInformation {
   cinema_id: string;
+  address: string;
   name: string;
   city: string;
 }
