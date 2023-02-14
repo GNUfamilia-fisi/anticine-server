@@ -62,6 +62,9 @@ class APICache {
     const resolvedBillboard = await billboards[cinema_id];
     return resolvedBillboard;
   }
+  async getMovieInformation(cinema_id: cinema_id, corporate_film_id: corporate_film_id) {
+    const billboard = await this.getFullBillboard(cinema_id);
+  }
   async getAllMoviesFromBillboard(cinema_id: cinema_id) {
     const billboards = await this.getFullBillboard(cinema_id);
     return billboards?.map(billboard => billboard.movies)

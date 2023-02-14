@@ -319,5 +319,6 @@ type BillboardForOnlyOneMovie = {
 }
 
 interface FullBillboardForMovieRouteResponse extends RouteResponse {
+  movie: Omit<CinemaMovieInformation, 'movie_versions'>;
   days: BillboardForOnlyOneMovie[];
 }

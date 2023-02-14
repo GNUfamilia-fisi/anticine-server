@@ -138,6 +138,7 @@ app.get('/cines/:cinema_id/cartelera', async (req, res) => {
 
 app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
   const to_return: FullBillboardForMovieRouteResponse = {
+    movie: null,
     days: [],
     code: 200,
     error: null
@@ -153,9 +154,13 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
   }
 
   const foundBillboards: BillboardForOnlyOneMovie[] = [];
+
   full_billboard.forEach((full_billboard) => {
     if (full_billboard.movies.some(movie => movie.corporate_film_id === corporate_film_id)) {
       const found = full_billboard.movies.find(movie => movie.corporate_film_id === corporate_film_id);
+      const { movie_versions, ...restOfMovie } = found;
+      to_return.movie = restOfMovie;
+
       if (!found) return;
       foundBillboards.push({
         date: full_billboard.date,
