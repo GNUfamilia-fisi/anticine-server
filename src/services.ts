@@ -6,11 +6,11 @@ dotenv.config();
 
 const { OPENAI_TOKEN, GEOLOCATION_APIKEY } = process.env;
 
-if (!OPENAI_TOKEN) throw new Error('OPENAI_TOKEN not set');
-if (!GEOLOCATION_APIKEY) throw new Error('GEOLOCATION_APIKEY not set');
-
 const OPENAI_MOCKED = true;
 const GEOLOCATION_MOCKED = true;
+
+if (!OPENAI_TOKEN && !OPENAI_MOCKED) throw new Error('OPENAI_TOKEN not set');
+if (!GEOLOCATION_APIKEY && !GEOLOCATION_MOCKED) throw new Error('GEOLOCATION_APIKEY not set');
 
 /* ------- CINEMA API ------- */
 
