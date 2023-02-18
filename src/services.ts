@@ -6,8 +6,8 @@ dotenv.config();
 
 const { OPENAI_TOKEN, GEOLOCATION_APIKEY } = process.env;
 
-const OPENAI_MOCKED = false;
-const GEOLOCATION_MOCKED = false;
+const OPENAI_MOCKED = true;
+const GEOLOCATION_MOCKED = true;
 
 if (!OPENAI_TOKEN && !OPENAI_MOCKED) throw new Error('OPENAI_TOKEN not set');
 if (!GEOLOCATION_APIKEY && !GEOLOCATION_MOCKED) throw new Error('GEOLOCATION_APIKEY not set');

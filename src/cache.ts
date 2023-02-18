@@ -1,4 +1,4 @@
-import { isPromiseFullfield } from './utils.js';
+import { isPromiseFullfield, removeDuplicates } from './utils.js';
 import {
   apifetch,
   BILLBOARD_ENDPOINT,
@@ -7,15 +7,14 @@ import {
   THEATRES_ENDPOINT
 } from './services.js';
 import {
-  CachedBillboardDayForCinema,
-  CachedCinemaMovieInformation,
-  CachedFullBillboardDaysForCinema,
+  BillboardDayForCinema,
   CinemaConfiteriaInformation,
   CinemaInformationWithCoords,
+  CinemaMovieInformation,
   FetchedBillboardForCinemaReponse,
   FetchedConsessionItemsResponse,
   FetchedTheatresResponse,
-  MinifiedBillboardDayForCinema,
+  FullBillboardDaysForCinema,
   MinifiedCinemaMovieInformation,
   MovieCast,
   MovieVersion,
@@ -32,13 +31,10 @@ class APICache {
 
   all_cinemas: Promise<CinemaInformationWithCoords[]>
   confiterias: Promise<
-    Record<city_name, Promise<CinemaConfiteriaInformation[] | undefined>>
+    Record<city_name, CinemaConfiteriaInformation[] | undefined>
   >;
   all_billboards: Promise<
-    Record<cinema_id, Promise<CachedFullBillboardDaysForCinema | undefined>>
-  >;
-  emoji_movie_cache: Promise<
-    Record<corporate_film_id, Promise<string | undefined>>
+    Record<cinema_id, FullBillboardDaysForCinema | undefined>
   >;
 
   constructor() {
@@ -52,64 +48,35 @@ class APICache {
     const cinemas = await this.all_cinemas;
     return cinemas.find(cinema => cinema.cinema_id === cinema_id);
   }
-  async getConfiteria(city: city_name) {
+  // Devuelve toda la confitería disponible para un cine
+  async getConfiteria(cinema_id: cinema_id) {
     const confiterias = await this.confiterias;
-    const resolvedConfiteria = await confiterias[city];
-    return resolvedConfiteria;
+    return confiterias[cinema_id];
   }
-  async getFullBillboard(cinema_id: cinema_id) {
+  // Devuelve toda la cartelera de un cine (separado por dates, con todas sus sesiones)
+  async getFullBillboard(cinema_id: cinema_id): Promise<FullBillboardDaysForCinema> {
     const billboards = await this.all_billboards;
-    const resolvedBillboard = await billboards[cinema_id];
-    return resolvedBillboard;
+    return billboards[cinema_id];
   }
+  // No implementado
   async getMovieInformation(cinema_id: cinema_id, corporate_film_id: corporate_film_id) {
     const billboard = await this.getFullBillboard(cinema_id);
   }
   async getAllMoviesFromCinema(cinema_id: cinema_id) {
     const billboards = await this.getFullBillboard(cinema_id);
-    const emojis_by_cinema_id = Object.keys(await this.emoji_movie_cache);
-    const emojis_promises = await Promise.allSettled(Object.values(await this.emoji_movie_cache));
-    const resolved_indexes = [];
-    emojis_promises.forEach((p, i) => {
-      if (isPromiseFullfield(p)) resolved_indexes.push(i);
-    });
-    const emojis = emojis_promises.reduce((acc, p, i) => {
-      if (isPromiseFullfield(p)) {
-        acc[emojis_by_cinema_id[i]] = p.value;
-      }
-      return acc;
-    }, {} as Record<corporate_film_id, string>);
 
-    console.log({emojis_promises});
-    console.log({emojis});
-
-    return billboards?.map(billboard => billboard.movies)
-    .flat().map((movie): MinifiedCinemaMovieInformation => {
-      return ({
-      title: movie.title,
-      poster_url: movie.poster_url,
-      duration: movie.duration,
-      emojis: emojis[movie.corporate_film_id] || '',
-      rating: movie.rating,
-      corporate_film_id: movie.corporate_film_id,
-      trailer_url: movie.trailer_url,
-      synopsis: movie.synopsis,
-    })}).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
+    return billboards?.map(billboard => billboard.movies).flat()
+      .map((movie): MinifiedCinemaMovieInformation => ({
+        title: movie.title,
+        poster_url: movie.poster_url,
+        duration: movie.duration,
+        emojis: movie.emojis,
+        rating: movie.rating,
+        corporate_film_id: movie.corporate_film_id,
+        trailer_url: movie.trailer_url,
+        synopsis: movie.synopsis,
+    })).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
   }
-  // Currently unused
-  // async getMinifiedBillboard(cinema_id: cinema_id) {
-  //   const billboards = await this.getFullBillboard(cinema_id);
-  //   const emojis_promises = await Promise.allSettled(Object.values(await this.emoji_movie_cache));
-  //   const emojis = emojis_promises.filter(isPromiseFullfield).map(p => p.value);
-
-  //   return billboards?.map((billboard): MinifiedBillboardDayForCinema => ({
-  //     date: billboard.date,
-  //     movies: billboard.movies.map(movie => {
-  //       const { cast, movie_versions, ...minified_movie } = movie;
-  //       return minified_movie;
-  //     })
-  //   }));
-  // }
   async refreshCache() {
     this.refreshing = true;
     console.log('Refresing Blazingly fast cache...');
@@ -131,105 +98,101 @@ class APICache {
 
     this.confiterias = new Promise(async (resolve, _reject) => {
       const confiterias_to_resolve: Record<
-        string, Promise<CinemaConfiteriaInformation[] | undefined>
+        cinema_id, CinemaConfiteriaInformation[] | undefined
       > = {};
       const cinemas = await this.all_cinemas;
-      const confiteriasPromises = cinemas
+      const confiteriasPromises = await Promise.allSettled(cinemas
         .map(cinema => apifetch<FetchedConsessionItemsResponse>(CONFITERIAS_ENDPOINT(cinema.cinema_id))
-      );
+      ));
+      const confiterias = confiteriasPromises.filter(isPromiseFullfield).map(p => p.value);
+
+      // populate confiterias_to_resolve
       cinemas.forEach((cinema, i) => {
-        confiterias_to_resolve[cinema.cinema_id] = confiteriasPromises[i]
-          .then(confiteria => {
-            if (confiteria === null) return undefined;
-            return confiteria.ConcessionItems.map(item => ({
-              item_id: item.Id,
-              name: item.DescriptionAlt || item.Description,
-              description: item.ExtendedDescription,
-              priceInCents: item.PriceInCents
-            } as CinemaConfiteriaInformation));
-          });
+        const confiteria = confiterias[i];
+        if (confiteria === null) {
+          confiterias_to_resolve[cinema.cinema_id] = undefined;
+          return;
+        }
+        confiterias_to_resolve[cinema.cinema_id] = confiteria.ConcessionItems.map(item => ({
+          item_id: item.Id,
+          name: item.DescriptionAlt || item.Description,
+          description: item.ExtendedDescription,
+          priceInCents: item.PriceInCents
+        } as CinemaConfiteriaInformation));
       });
       resolve(confiterias_to_resolve);
     });
 
     this.all_billboards = new Promise(async (resolve, _reject) => {
       const billboards_to_resolve: Record<
-        cinema_id, Promise<CachedFullBillboardDaysForCinema | undefined>
+        cinema_id, FullBillboardDaysForCinema | undefined
       > = {};
       const cinemas = await this.all_cinemas;
 
       // Fetching the billboard of each cinema (without resolving)
-      const billboardPromises = cinemas.map(
+      const billboardPromises = await Promise.allSettled(
+        cinemas.map(
           cinema => apifetch<FetchedBillboardForCinemaReponse>(BILLBOARD_ENDPOINT(cinema.cinema_id))
+        )
       );
+      // First resolve the billboards
+      const billboards = billboardPromises.filter(isPromiseFullfield).map(p => p.value);
+      const all_movies = billboards.map(billboard => billboard.map(day => day.movies)).flat(2);
 
-      cinemas.forEach((cinema, i) => {
-        billboards_to_resolve[cinema.cinema_id] = billboardPromises[i]
-          .then(billboard => {
-            if (billboard === null) return undefined;
-            // Extract just the necesarry information
-            return billboard.map((billboardItem): CachedBillboardDayForCinema => ({
-              date: billboardItem.date,
-              movies: billboardItem.movies.map((movie): CachedCinemaMovieInformation => ({
-                corporate_film_id: movie.corporate_film_id,
-                title: movie.title,
-                synopsis: movie.synopsis.replaceAll(/\s{2,}|\t|\r|\s+$/mg, ''),
-                trailer_url: movie.trailer_url,
-                poster_url: `https://cinemarkmedia.modyocdn.com/pe/300x400/${movie.corporate_film_id}.jpg`,
-                duration: Number(movie.runtime),
-                rating: movie.rating,
-                cast: movie.cast.map((cast): MovieCast => ({
-                  fullname: `${cast.FirstName.trimEnd()} ${cast.LastName}`,
-                  role: cast.PersonType
-                })),
-                movie_versions: movie.movie_versions.map((version): MovieVersion => ({
-                  movie_version_id: version.film_HOPK,
-                  title: version.title,
-                  sessions: version.sessions.map((session): SessionForMovieVersion => ({
-                    session_id: session.id,
-                    day: session.day,
-                    hour: session.hour,
-                    seats_available: session.seats_available,
-                  }))
-                }))
-              }))
-            }));
-          });
-      });
-      resolve(billboards_to_resolve);
-    });
-
-    this.emoji_movie_cache = new Promise(async (resolve, _reject) => {
-      const fetched_billboards = await this.all_billboards;
-      const billboards_promises = Object.values(fetched_billboards);
-      const billboards = (
-        await Promise.allSettled(billboards_promises)
-      ).filter(isPromiseFullfield).map(promise => promise.value);
-
-      const emojis_to_resolve: Record<
-        corporate_film_id, Promise<string | undefined>
-      > = {};
-
-      billboards
-        .forEach(billboard => billboard
-          .map(billboard_day => billboard_day.movies)
-          .flat()
-          .forEach(movie => {
-            if (emojis_to_resolve[movie.corporate_film_id]) return;
-            emojis_to_resolve[movie.corporate_film_id] = movieToEmojisIA({
-              title: movie.title,
-              description: movie.synopsis,
-            });
+      const emojis_promises = removeDuplicates(all_movies, 'corporate_film_id')
+        .map(unique_movie => new Promise<[corporate_film_id, string | undefined]>((resolve, _) => {
+            movieToEmojisIA({ title: unique_movie.title, description: unique_movie.synopsis })
+              .then(emojis => resolve([unique_movie.corporate_film_id, emojis]));
           })
+        );
+      
+      const resolved_emojis = await Promise.allSettled(emojis_promises)
+        .then(promises => promises.filter(isPromiseFullfield).map(p => p.value));
+
+      const emojis_for_movies: Record<corporate_film_id, string | undefined> = Object.fromEntries(
+        resolved_emojis
       );
-      resolve(emojis_to_resolve);
+
+      // populate the billboards_to_resolve object
+      cinemas.forEach((cinema, i) => {
+        const billboard = billboards[i];
+        // Extract just the necesarry information
+        billboards_to_resolve[cinema.cinema_id] = billboard.map((billboardItem): BillboardDayForCinema => ({
+          date: billboardItem.date,
+          movies: billboardItem.movies.map((movie): CinemaMovieInformation => ({
+            corporate_film_id: movie.corporate_film_id,
+            title: movie.title,
+            synopsis: movie.synopsis.replaceAll(/\s{2,}|\t|\r|\s+$/mg, ''),
+            emojis: emojis_for_movies[movie.corporate_film_id] || '❓❓❓❓❓',
+            trailer_url: movie.trailer_url,
+            poster_url: `https://cinemarkmedia.modyocdn.com/pe/300x400/${movie.corporate_film_id}.jpg`,
+            duration: Number(movie.runtime),
+            rating: movie.rating,
+            cast: movie.cast.map((cast): MovieCast => ({
+              fullname: `${cast.FirstName.trimEnd()} ${cast.LastName}`,
+              role: cast.PersonType
+            })),
+            movie_versions: movie.movie_versions.map((version): MovieVersion => ({
+              movie_version_id: version.film_HOPK,
+              title: version.title,
+              sessions: version.sessions.map((session): SessionForMovieVersion => ({
+                session_id: session.id,
+                day: session.day,
+                hour: session.hour,
+                seats_available: session.seats_available,
+              }))
+            }))
+          }))
+        }));
+      });
+
+      resolve(billboards_to_resolve);
     });
 
     console.log({
       all_cinemas: this.all_cinemas,
       confiterias: this.confiterias,
       all_billboards: this.all_billboards,
-      emoji_movie_cache: this.emoji_movie_cache
     });
     console.log('Blazingly fast cache refreshed!');
     this.refreshing = false;
