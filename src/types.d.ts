@@ -185,16 +185,15 @@ interface FetchedCast {
 // Parsed from Fetched
 
 // Implements FetchedBillboardForCinemaReponse
-type FullBillboardDaysForCinema = BillboardDayForCinema[];
+type CachedFullBillboardDaysForCinema = CachedBillboardDayForCinema[];
 
 // Implements FetchedBillboardItemForCinema
-interface BillboardDayForCinema {
+interface CachedBillboardDayForCinema {
   date: string;
-  movies: CinemaMovieInformation[];
+  movies: CachedCinemaMovieInformation[];
 }
 
-// Implements FetchedMovieInformation
-interface CinemaMovieInformation {
+interface CachedCinemaMovieInformation {
   corporate_film_id: string;
   title: string;
   synopsis: string;
@@ -204,6 +203,11 @@ interface CinemaMovieInformation {
   rating: string; // M14, APT (PG), etc
   cast: MovieCast[];
   movie_versions: MovieVersion[];
+}
+
+// Implements FetchedMovieInformation
+interface CinemaMovieInformation extends CachedCinemaMovieInformation {
+  emojis: string;
 }
 
 // Tomamos 'film_HOPK' como id. Si bien existe la propiedad 'id', no es

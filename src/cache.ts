@@ -7,14 +7,14 @@ import {
   THEATRES_ENDPOINT
 } from './services.js';
 import {
-  BillboardDayForCinema,
+  CachedBillboardDayForCinema,
+  CachedCinemaMovieInformation,
+  CachedFullBillboardDaysForCinema,
   CinemaConfiteriaInformation,
   CinemaInformationWithCoords,
-  CinemaMovieInformation,
   FetchedBillboardForCinemaReponse,
   FetchedConsessionItemsResponse,
   FetchedTheatresResponse,
-  FullBillboardDaysForCinema,
   MinifiedBillboardDayForCinema,
   MinifiedCinemaMovieInformation,
   MovieCast,
@@ -28,14 +28,14 @@ type corporate_film_id = string;
 
 class APICache {
   refreshing: boolean = false;
-  updateInterval = 1000 * 60 * 60; // 1 hour
+  updateInterval = 1000 * 60 * 70; // 1 hour and 10 minutes
 
   all_cinemas: Promise<CinemaInformationWithCoords[]>
   confiterias: Promise<
     Record<city_name, Promise<CinemaConfiteriaInformation[] | undefined>>
   >;
   all_billboards: Promise<
-    Record<cinema_id, Promise<FullBillboardDaysForCinema | undefined>>
+    Record<cinema_id, Promise<CachedFullBillboardDaysForCinema | undefined>>
   >;
   emoji_movie_cache: Promise<
     Record<corporate_film_id, Promise<string | undefined>>
@@ -65,30 +65,51 @@ class APICache {
   async getMovieInformation(cinema_id: cinema_id, corporate_film_id: corporate_film_id) {
     const billboard = await this.getFullBillboard(cinema_id);
   }
-  async getAllMoviesFromBillboard(cinema_id: cinema_id) {
+  async getAllMoviesFromCinema(cinema_id: cinema_id) {
     const billboards = await this.getFullBillboard(cinema_id);
+    const emojis_by_cinema_id = Object.keys(await this.emoji_movie_cache);
+    const emojis_promises = await Promise.allSettled(Object.values(await this.emoji_movie_cache));
+    const resolved_indexes = [];
+    emojis_promises.forEach((p, i) => {
+      if (isPromiseFullfield(p)) resolved_indexes.push(i);
+    });
+    const emojis = emojis_promises.reduce((acc, p, i) => {
+      if (isPromiseFullfield(p)) {
+        acc[emojis_by_cinema_id[i]] = p.value;
+      }
+      return acc;
+    }, {} as Record<corporate_film_id, string>);
+
+    console.log({emojis_promises});
+    console.log({emojis});
+
     return billboards?.map(billboard => billboard.movies)
-    .flat().map((movie): MinifiedCinemaMovieInformation => ({
+    .flat().map((movie): MinifiedCinemaMovieInformation => {
+      return ({
       title: movie.title,
       poster_url: movie.poster_url,
       duration: movie.duration,
+      emojis: emojis[movie.corporate_film_id] || '',
       rating: movie.rating,
       corporate_film_id: movie.corporate_film_id,
       trailer_url: movie.trailer_url,
       synopsis: movie.synopsis,
-    })).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
+    })}).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
   }
   // Currently unused
-  async getMinifiedBillboard(cinema_id: cinema_id) {
-    const billboards = await this.getFullBillboard(cinema_id);
-    return billboards?.map((billboard): MinifiedBillboardDayForCinema => ({
-      date: billboard.date,
-      movies: billboard.movies.map(movie => {
-        const { cast, movie_versions, ...minified_movie } = movie;
-        return minified_movie;
-      })
-    }));
-  }
+  // async getMinifiedBillboard(cinema_id: cinema_id) {
+  //   const billboards = await this.getFullBillboard(cinema_id);
+  //   const emojis_promises = await Promise.allSettled(Object.values(await this.emoji_movie_cache));
+  //   const emojis = emojis_promises.filter(isPromiseFullfield).map(p => p.value);
+
+  //   return billboards?.map((billboard): MinifiedBillboardDayForCinema => ({
+  //     date: billboard.date,
+  //     movies: billboard.movies.map(movie => {
+  //       const { cast, movie_versions, ...minified_movie } = movie;
+  //       return minified_movie;
+  //     })
+  //   }));
+  // }
   async refreshCache() {
     this.refreshing = true;
     console.log('Refresing Blazingly fast cache...');
@@ -133,7 +154,7 @@ class APICache {
 
     this.all_billboards = new Promise(async (resolve, _reject) => {
       const billboards_to_resolve: Record<
-        cinema_id, Promise<FullBillboardDaysForCinema | undefined>
+        cinema_id, Promise<CachedFullBillboardDaysForCinema | undefined>
       > = {};
       const cinemas = await this.all_cinemas;
 
@@ -147,9 +168,9 @@ class APICache {
           .then(billboard => {
             if (billboard === null) return undefined;
             // Extract just the necesarry information
-            return billboard.map((billboardItem): BillboardDayForCinema => ({
+            return billboard.map((billboardItem): CachedBillboardDayForCinema => ({
               date: billboardItem.date,
-              movies: billboardItem.movies.map((movie): CinemaMovieInformation => ({
+              movies: billboardItem.movies.map((movie): CachedCinemaMovieInformation => ({
                 corporate_film_id: movie.corporate_film_id,
                 title: movie.title,
                 synopsis: movie.synopsis.replaceAll(/\s{2,}|\t|\r|\s+$/mg, ''),

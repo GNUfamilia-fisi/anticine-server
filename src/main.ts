@@ -124,7 +124,7 @@ app.get('/cines/:cinema_id/cartelera', async (req, res) => {
     error: null
   };
   const { cinema_id } = req.params;
-  const billboard = await blazinglyFastCache.getAllMoviesFromBillboard(cinema_id);
+  const billboard = await blazinglyFastCache.getAllMoviesFromCinema(cinema_id);
 
   if (!billboard) {
     to_return.code = 404;
@@ -155,15 +155,15 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
 
   const foundBillboards: BillboardForOnlyOneMovie[] = [];
 
-  full_billboard.forEach((full_billboard) => {
-    if (full_billboard.movies.some(movie => movie.corporate_film_id === corporate_film_id)) {
-      const found = full_billboard.movies.find(movie => movie.corporate_film_id === corporate_film_id);
+  full_billboard.forEach((billboard_day) => {
+    const found = billboard_day.movies.find(movie => movie.corporate_film_id === corporate_film_id);
+    if (found) {
       const { movie_versions, ...restOfMovie } = found;
       to_return.movie = restOfMovie;
 
       if (!found) return;
       foundBillboards.push({
-        date: full_billboard.date,
+        date: billboard_day.date,
         movie_versions: found.movie_versions
       });
     }
