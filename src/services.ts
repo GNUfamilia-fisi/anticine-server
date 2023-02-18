@@ -5,14 +5,13 @@ import { Configuration, OpenAIApi } from 'openai';
 dotenv.config();
 
 const { OPENAI_TOKEN, GEOLOCATION_APIKEY } = process.env;
+const MOCK_APIS = process.env.RAILWAY_ENVIRONMENT === 'production' ? false : true;
 
-const OPENAI_MOCKED = true;
-const GEOLOCATION_MOCKED = true;
-
-if (!OPENAI_TOKEN && !OPENAI_MOCKED) throw new Error('OPENAI_TOKEN not set');
-if (!GEOLOCATION_APIKEY && !GEOLOCATION_MOCKED) throw new Error('GEOLOCATION_APIKEY not set');
+if (!OPENAI_TOKEN && !MOCK_APIS) throw new Error('OPENAI_TOKEN not set');
+if (!GEOLOCATION_APIKEY && !MOCK_APIS) throw new Error('GEOLOCATION_APIKEY not set');
 
 /* ------- CINEMA API ------- */
+// Cinema API endpoints are never mocked
 
 // Endpoints
 export const CONFITERIAS_ENDPOINT = (cinema_id: string) => (
@@ -71,7 +70,7 @@ ${movie.description}
 five flat emojis:`);
 
 export async function movieToEmojisIA({ title, description } : { title: string, description: string }) {
-  if (OPENAI_MOCKED) return '⛄🏰👸🏔️🥶';
+  if (MOCK_APIS) return '⛄🏰👸🏔️🥶';
   const response = await openai.createCompletion({
     model: "text-davinci-002",
     prompt: movie_prompt({ title, description }),
@@ -102,20 +101,20 @@ interface IPLookup {
 }
 
 const mockResponse = (ip: string) => ({
-  "ip": ip,
-  "country_code2": "PE",
-  "country_code3": "PER",
-  "country_name": "Peru",
-  "state_prov": "Lima",
-  "district": "",
-  "city": "Lima",
-  "zipcode": "15048",
-  "latitude": "-12.10925",
-  "longitude": "-77.01641"
+  ip: ip,
+  country_code2: "PE",
+  country_code3: "PER",
+  country_name: "Peru",
+  state_prov: "Lima",
+  district: "",
+  city: "Lima",
+  zipcode: "15048",
+  latitude: "-12.10925",
+  longitude: "-77.01641"
 });
 
 export async function ipLookupLocation(ip: string) {
-  if (GEOLOCATION_MOCKED) return mockResponse(ip);
+  if (MOCK_APIS) return mockResponse(ip);
 
   const data = await fetch(
     `https://api.ipgeolocation.io/ipgeo?apiKey=${GEOLOCATION_APIKEY}&ip=${ip}&fields=geo`
