@@ -145,6 +145,19 @@ interface FetchedBillboardItemForCinema {
   movies: FetchedMovieInformation[];
 }
 
+type MovieRating = (
+  "APT (PG)" | // Apto para Todos
+  "G"        | // General Exhibition
+  "M"        | // Mature Audiences
+  "M14"      | // Mayor a 14
+  "M18"      | // Mayor a 18
+  "PG"       | // Parental Guidance Recommended
+  "R"        | // Restricted 16+ unless parent/guardn
+  "R16"      | // Restricted To 16+
+  "R18"      | // Restricted To 18+
+  "TBC"        // To be confirmed
+);
+
 interface FetchedMovieInformation {
   corporate_film_id: string;
   film_HO_code: string; // shared with movie version
@@ -152,7 +165,7 @@ interface FetchedMovieInformation {
   trailer_url: string;
   graphic_url: string;
   runtime: string;
-  rating: string; // M14, APT (PG), etc
+  rating: MovieRating;
   synopsis: string;
   opening_date: string;
   cast: FetchedCast[];
@@ -202,7 +215,7 @@ interface CinemaMovieInformation {
   trailer_url: string;
   poster_url: string;
   duration: number;
-  rating: string; // M14, APT (PG), etc
+  rating: MovieRating;
   cast: MovieCast[];
   movie_versions: MovieVersion[];
 }
@@ -261,7 +274,7 @@ interface CinemaAllMoviesFromBillboardRouteResponse extends RouteResponse {
 
 interface FetchedMovieByFilmIDResponse {
   Title: string;
-  Rating: string;
+  Rating: MovieRating;
   Synopsis: string;
   OpeningDate: string;
   RunTime: string;

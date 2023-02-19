@@ -191,7 +191,18 @@ La cartelera solo contiene información básica de las películas. Para obtener
 información de los horarios y salas para esa película, refiérase
 [al siguiente endpoint](#get-cinescinema_idcarteleracorporate_film_id).
 
-Los rating conocidos hasta ahora son: `[ "M14", "AP (PG)"]`
+Lista de ratings disponibles:
+
+- `APT (PG)` (Apto para Todos)
+- `G` (General Exhibition)
+- `M` (Mature Audiences)
+- `M14` (Mayor a 14)
+- `M18` (Mayor a 18)
+- `PG` (Parental Guidance Recommended)
+- `R` (Restricted 16+ unless parent/guardn)
+- `R16` (Restricted To 16+)
+- `R18` (Restricted To 18+)
+- `TBC` (To be confirmed)
 
 Respuesta exitosa:
 
