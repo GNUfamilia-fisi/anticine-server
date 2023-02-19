@@ -185,7 +185,7 @@ class APICache {
 export const blazinglyFastCache = new APICache();
 
 setInterval(
-  blazinglyFastCache.refreshCache,
+  blazinglyFastCache.refreshCache.bind(blazinglyFastCache),
   blazinglyFastCache.updateInterval
 );
 
