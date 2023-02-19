@@ -6,20 +6,6 @@ import {
   movieToEmojisIA,
   THEATRES_ENDPOINT
 } from './services.js';
-import {
-  BillboardDayForCinema,
-  CinemaConfiteriaInformation,
-  CinemaInformationWithCoords,
-  CinemaMovieInformation,
-  FetchedBillboardForCinemaReponse,
-  FetchedConsessionItemsResponse,
-  FetchedTheatresResponse,
-  FullBillboardDaysForCinema,
-  MinifiedCinemaMovieInformation,
-  MovieCast,
-  MovieVersion,
-  SessionForMovieVersion
-} from './types.js';
 
 type city_name = string;
 type cinema_id = string;
@@ -58,10 +44,7 @@ class APICache {
     const billboards = await this.all_billboards;
     return billboards[cinema_id];
   }
-  // No implementado
-  async getMovieInformation(cinema_id: cinema_id, corporate_film_id: corporate_film_id) {
-    const billboard = await this.getFullBillboard(cinema_id);
-  }
+  // Devuelve todas la lista de películas de un cine (sin importar sus fechas ni sesiones)
   async getAllMoviesFromCinema(cinema_id: cinema_id) {
     const billboards = await this.getFullBillboard(cinema_id);
 

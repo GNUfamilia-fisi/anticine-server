@@ -1,14 +1,5 @@
 import express from 'express';
 import { blazinglyFastCache } from './cache.js';
-import { AllCinemasRouteResponse,
-  CinemaConfiteriaRouteResponse,
-  CinemaInformation,
-  CinemaInformationWithCoords,
-  NearCinemasRouteResponse,
-  FullBillboardForMovieRouteResponse,
-  BillboardForOnlyOneMovie,
-  CinemaAllMoviesFromBillboardRouteResponse,
-} from './types.js';
 import { ipLookupLocation } from './services.js';
 
 const app = express();
@@ -144,6 +135,8 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
     error: null
   };
   const { cinema_id, corporate_film_id } = req.params;
+
+  // Get the full billboard for the cinema
   const full_billboard = await blazinglyFastCache.getFullBillboard(cinema_id);
 
   if (!full_billboard) {
@@ -153,27 +146,26 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
     return;
   }
 
-  const foundBillboards: BillboardForOnlyOneMovie[] = [];
-
-  full_billboard.forEach((billboard_day) => {
+  // Find all the days that have the movie
+  full_billboard.forEach(billboard_day => {
+    // Find the movie
     const found = billboard_day.movies.find(movie => movie.corporate_film_id === corporate_film_id);
-    if (found) {
-      const { movie_versions, ...restOfMovie } = found;
-      to_return.movie = restOfMovie;
+    if (!found) return;
 
-      if (!found) return;
-      foundBillboards.push({
-        date: billboard_day.date,
-        movie_versions: found.movie_versions
-      });
-    }
+    // Get the movie and its versions separately (by design)
+    const { movie_versions, ...restOfMovie } = found;
+    to_return.movie = restOfMovie;
+
+    // Store the date and the versions for the movie
+    to_return.days.push({
+      date: billboard_day.date,
+      movie_versions: found.movie_versions
+    });
   });
 
-  to_return.days = foundBillboards;
-
-  if (to_return.days.length === 0) {
+  if (!to_return.movie) {
     to_return.code = 404;
-    to_return.error = 'No se pudo encontrar la cartelera';
+    to_return.error = 'No se pudo encontrar la película';
     res.send(to_return);
     return;
   }

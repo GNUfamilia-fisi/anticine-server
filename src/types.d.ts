@@ -19,7 +19,7 @@ interface RouteResponse {
 
 type FetchedTheatresResponse = FetchedTheatreItem[]
 
-export interface FetchedTheatreItem {
+interface FetchedTheatreItem {
   city: string;
   cinemas: FetchedCinema[];
 }
@@ -314,12 +314,12 @@ type FetchedBillboardForMovieOfCinemaResponse = FetchedBillboardItemForCinema[];
 
 // api.url/cines/:cinema_id/cartelera/:corporate_film_id
 
-type BillboardForOnlyOneMovie = {
+type BillboardDayForOnlyOneMovie = {
   date: string;
   movie_versions: MovieVersion[];
 }
 
 interface FullBillboardForMovieRouteResponse extends RouteResponse {
   movie: Omit<CinemaMovieInformation, 'movie_versions'>;
-  days: BillboardForOnlyOneMovie[];
+  days: BillboardDayForOnlyOneMovie[];
 }
