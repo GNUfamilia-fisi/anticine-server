@@ -13,7 +13,7 @@ type corporate_film_id = string;
 
 class APICache {
   refreshing: boolean = false;
-  updateInterval = 1000 * 60 * 70; // 1 hour and 10 minutes
+  updateInterval = 1000 * 60 * 60 * 12; // 12 hours
 
   all_cinemas: Promise<CinemaInformationWithCoords[]>
   confiterias: Promise<

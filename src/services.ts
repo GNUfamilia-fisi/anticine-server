@@ -5,7 +5,11 @@ import { Configuration, OpenAIApi } from 'openai';
 dotenv.config();
 
 const { OPENAI_TOKEN, GEOLOCATION_APIKEY } = process.env;
-const MOCK_APIS = process.env.RAILWAY_ENVIRONMENT === 'production' ? false : true;
+// Mock APIs if we're not in production or app mode is testing
+const MOCK_APIS = (
+  process.env.RAILWAY_ENVIRONMENT !== 'production' ||
+  process.env.APP_MODE === 'testing'
+);
 
 if (!OPENAI_TOKEN && !MOCK_APIS) throw new Error('OPENAI_TOKEN not set');
 if (!GEOLOCATION_APIKEY && !MOCK_APIS) throw new Error('GEOLOCATION_APIKEY not set');
