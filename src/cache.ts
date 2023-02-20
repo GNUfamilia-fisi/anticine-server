@@ -1,4 +1,4 @@
-import { isPromiseFullfield, removeDuplicates } from './utils.js';
+import { getTagsFromMovieTitle, isPromiseFullfield, removeDuplicates, uniqueValues } from './utils.js';
 import {
   apifetch,
   BILLBOARD_ENDPOINT,
@@ -52,6 +52,7 @@ class APICache {
       .map((movie): MinifiedCinemaMovieInformation => ({
         title: movie.title,
         poster_url: movie.poster_url,
+        version_tags: movie.version_tags,
         duration: movie.duration,
         emojis: movie.emojis,
         rating: movie.rating,
@@ -145,6 +146,10 @@ class APICache {
           movies: billboardItem.movies.map((movie): CinemaMovieInformation => ({
             corporate_film_id: movie.corporate_film_id,
             title: movie.title,
+            // Extract all the versions from the movie_versions property
+            version_tags: uniqueValues(
+              movie.movie_versions.map(v => getTagsFromMovieTitle(v.title).version_tags).flat()
+            ).join(' '),
             synopsis: movie.synopsis.replaceAll(/\s{2,}|\t|\r|\s+$/mg, ''),
             emojis: emojis_for_movies[movie.corporate_film_id] || '❓❓❓❓❓',
             trailer_url: movie.trailer_url,
@@ -155,16 +160,22 @@ class APICache {
               fullname: `${cast.FirstName.trimEnd()} ${cast.LastName}`,
               role: cast.PersonType
             })),
-            movie_versions: movie.movie_versions.map((version): MovieVersion => ({
-              movie_version_id: version.film_HOPK,
-              title: version.title,
-              sessions: version.sessions.map((session): SessionForMovieVersion => ({
-                session_id: session.id,
-                day: session.day,
-                hour: session.hour,
-                seats_available: session.seats_available,
-              }))
-            }))
+            movie_versions: movie.movie_versions.map((version): MovieVersion => {
+              const movie_tags = getTagsFromMovieTitle(version.title);
+              return {
+                movie_version_id: version.film_HOPK,
+                title: version.title,
+                version_tags: movie_tags.version_tags,
+                language_tags: movie_tags.language_tags,
+                seats_tags: movie_tags.seats_tags,
+                sessions: version.sessions.map((session): SessionForMovieVersion => ({
+                  session_id: session.id,
+                  day: session.day,
+                  hour: session.hour,
+                  seats_available: session.seats_available,
+                }))
+              }
+            })
           }))
         }));
       });

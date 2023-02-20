@@ -85,6 +85,10 @@ export async function movieToEmojisIA({ title, description } : { title: string, 
     presence_penalty: 0,
   });
 
+  if (response.status !== 200) {
+    return '⛄🏰👸🏔️🥶';
+  }
+
   const emojis = response.data.choices[0].text.trim();
   return runes.substr(emojis, 0, 5);
 }
@@ -104,7 +108,7 @@ interface IPLookup {
   longitude: string;
 }
 
-const mockResponse = (ip: string) => ({
+const geolocationMockResponse = (ip: string) => ({
   ip: ip,
   country_code2: "PE",
   country_code3: "PER",
@@ -118,7 +122,7 @@ const mockResponse = (ip: string) => ({
 });
 
 export async function ipLookupLocation(ip: string) {
-  if (MOCK_APIS) return mockResponse(ip);
+  if (MOCK_APIS) return geolocationMockResponse(ip);
 
   const data = await fetch(
     `https://api.ipgeolocation.io/ipgeo?apiKey=${GEOLOCATION_APIKEY}&ip=${ip}&fields=geo`

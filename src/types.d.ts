@@ -7,10 +7,12 @@ interface RouteResponse {
 
 // +---------------------------------------------------+
 // +---------------------+ RUTAS +---------------------+
+// +------ Aquí se definen todas las interfaces -------+
 // +---------------------------------------------------+
-// +  Nota: Las interfaces traídas de la API empiezan  +
-// +     con Fetched, para diferenciarlas de sus       +
-// +        implementaciones o simplificaciones        +
+// +  Las interfaces que empiezan con Fetched son las  +
+// +    traídas directamente desde la Cinemark API,    +
+// +   el resto son implementaciones propias con la    +
+// +  información necesaria y propiedades adcicionales +
 // +---------------------------------------------------+
 
 // -----------------------------------------------------
@@ -72,6 +74,7 @@ interface AllCinemasRouteResponse extends RouteResponse {
 // https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id={}
 // 
 //       Cada item tiene demasiados campos sin documentación, ni utilidad
+//               por ello solo se extraen los campos necesarios
 // -------------------------------------------------------------------------------
 
 interface FetchedConsessionItemsResponse {
@@ -116,7 +119,7 @@ interface FetchedConcessionItem {
   VoucherSaleType: string;
 }
 
-// Implementation:
+// Implementations:
 
 // GET api.url/cines/:cinema_id/confiteria
 
@@ -195,7 +198,7 @@ interface FetchedCast {
   PersonType: 'Actor' | 'Director';
 }
 
-// Parsed from Fetched
+/* --- Parsed from Fetched --- */
 
 // Implements FetchedBillboardForCinemaReponse
 type FullBillboardDaysForCinema = BillboardDayForCinema[];
@@ -206,12 +209,36 @@ interface BillboardDayForCinema {
   movies: CinemaMovieInformation[];
 }
 
+// Acerca de los tags:
+/*
+ Los siguientes tags son usados para clasificar películas,
+ y están definidas en la API de Cinemark.
+
+ default_tags_versions: ['2D', '3D', 'XD'],
+ default_tags_languages: ['SUB', 'DOB', 'CAS'],
+ default_tags_seats: ['DBOX', 'PRE', 'BIS'], // 'TRAD' is used when 'PRE' is not present
+
+ "3D": "Salas con pantalla 3D",
+ "XD": "Pantalla gigante de 4 pisos de altura y sonido envolvente",
+ "DBOX": "Sillas programadas para moverse con la película",
+ "PRE": "Poltronas completamente reclinables y con descansa pies",
+ "BIS": "Sillas más cómodas y un exquisito menú gourmet",
+ "TRAD": "Sillas tradicionales"
+*/
+
+// Una película puede tener varios tags por categoría.
+// Una MovieVersion solo puede tener un tag de cada categoría.
+type MovieVersionTag = '2D' | '3D' | 'XD';
+type MovieLanguageTag = 'SUB' | 'DOB' | 'CAS' | 'ESP'; // ESP no está documentado pero existe
+type MovieSeatsTag = 'DBOX' | 'PRE' | 'BIS' | 'TRAD';
+
 // Implements FetchedMovieInformation
 interface CinemaMovieInformation {
   corporate_film_id: string;
   title: string;
   synopsis: string;
-  emojis: string | null;
+  emojis: string | null; // added
+  version_tags: string; // las tags de todas las versiones
   trailer_url: string;
   poster_url: string;
   duration: number;
@@ -226,6 +253,9 @@ interface CinemaMovieInformation {
 interface MovieVersion {
   movie_version_id: string; // film_HOPK
   title: string;
+  version_tags: string;   // added
+  language_tags: string; // added
+  seats_tags: string;       // added
   sessions: SessionForMovieVersion[];
 }
 
@@ -256,7 +286,8 @@ type MinifiedBillboardDayForCinema = {
   movies: MinifiedCinemaMovieInformation[];
 }
 
-// Separado por fechas, pero actualmente no se usa
+// Cartelera separa por fechas
+// (actualmente, esta ruta fue reemplazada por CinemaAllMoviesFromBillboardRouteResponse)
 interface CinemaBillboardRouteResponse extends RouteResponse {
   days: MinifiedBillboardDayForCinema[];
 }
