@@ -69,7 +69,8 @@ Si existe, lista de `cinemas` estará ordenada por cercanía al usuario.
 El primer cine siempre será el más cercano.
 
 Para determinar la ciudad y las coordenadas aproximadas del usuario, se hace
-uso de la librería [geoip-lite](https://www.npmjs.com/package/geoip-lite).
+uso de la API [ipgeolocation](https://ipgeolocation.io/), que es la más precisa
+y abierta que pudimos encontrar.
 
 Respuesta exitosa:
 
