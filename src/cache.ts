@@ -145,7 +145,9 @@ class APICache {
         .map(movie => new Promise<[corporate_film_id, ThumbnailInformation]>(async (resolve, _) => {
           const poster_url = CINEMARK_MOVIE_THUMBNAIL(movie.corporate_film_id);
           const image_path = await downloadImageToCache(poster_url, movie.corporate_film_id);
+          console.log(`image downloaded into ${image_path}`);
           const ANSI_art = await terminalImage.file(image_path, { width: 45, height: 30 });
+          console.log(`ascii art generated succesfully:\n${ANSI_art}`)
           const average_color = await getAverageColor(image_path);
           resolve([movie.corporate_film_id, {
             average_color: {
