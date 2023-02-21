@@ -1,3 +1,6 @@
+import downloadImg from 'image-downloader';
+import { existsSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
 
 // "Type guard" para filtrar los resultados de Promise.allSettled
 export function isPromiseFullfield<T>(promise: PromiseSettledResult<T>): promise is PromiseFulfilledResult<T> {
@@ -70,4 +73,20 @@ export function getTagsFromMovieTitle(title: string): MovieTags {
   }
 
   return foundTags;
+}
+
+/* Download image from url */
+
+const CACHE_DIR = path.join(process.cwd(), 'cache');
+
+if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR);
+
+export async function downloadImageToCache(url: string, filename: string) {
+  const destination = `${path.join(CACHE_DIR, filename)}.jpg`;
+  if (existsSync(destination)) {
+    return destination;
+  }
+
+  // TODO: handle downloading error
+  return (await downloadImg.image({ url: url, dest: CACHE_DIR })).filename;
 }

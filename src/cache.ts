@@ -1,11 +1,14 @@
-import { getTagsFromMovieTitle, isPromiseFullfield, removeDuplicates, uniqueValues } from './utils.js';
+import { downloadImageToCache, getTagsFromMovieTitle, isPromiseFullfield, removeDuplicates, uniqueValues } from './utils.js';
 import {
   apifetch,
   BILLBOARD_ENDPOINT,
+  CINEMARK_MOVIE_THUMBNAIL,
   CONFITERIAS_ENDPOINT,
   movieToEmojisIA,
   THEATRES_ENDPOINT
 } from './services.js';
+import terminalImage from 'terminal-image';
+import { getAverageColor } from 'fast-average-color-node';
 
 type city_name = string;
 type cinema_id = string;
@@ -49,17 +52,10 @@ class APICache {
     const billboards = await this.getFullBillboard(cinema_id);
 
     return billboards?.map(billboard => billboard.movies).flat()
-      .map((movie): MinifiedCinemaMovieInformation => ({
-        title: movie.title,
-        poster_url: movie.poster_url,
-        version_tags: movie.version_tags,
-        duration: movie.duration,
-        emojis: movie.emojis,
-        rating: movie.rating,
-        corporate_film_id: movie.corporate_film_id,
-        trailer_url: movie.trailer_url,
-        synopsis: movie.synopsis,
-    })).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
+      .map((movie): MinifiedCinemaMovieInformation => {
+        const { cast, movie_versions, ...minifiedMovie } = movie;
+        return minifiedMovie;
+    }).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
   }
   async refreshCache() {
     this.refreshing = true;
@@ -119,23 +115,51 @@ class APICache {
           cinema => apifetch<FetchedBillboardForCinemaReponse>(BILLBOARD_ENDPOINT(cinema.cinema_id))
         )
       );
-      // First resolve the billboards
+      // First resolve the billboards to get all the movies, but removing the duplicates
       const billboards = billboardPromises.filter(isPromiseFullfield).map(p => p.value);
-      const all_movies = billboards.map(billboard => billboard.map(day => day.movies)).flat(2);
+      const all_movies = removeDuplicates(
+        billboards.map(billboard => billboard.map(day => day.movies)).flat(2),
+        'corporate_film_id'
+      );
 
-      const emojis_promises = removeDuplicates(all_movies, 'corporate_film_id')
-        .map(unique_movie => new Promise<[corporate_film_id, string | undefined]>((resolve, _) => {
-            movieToEmojisIA({ title: unique_movie.title, description: unique_movie.synopsis })
-              .then(emojis => resolve([unique_movie.corporate_film_id, emojis]));
+      /* --- Getting emojis for each movie --- */
+      const emojis_promises = all_movies
+        .map(movie => new Promise<[corporate_film_id, string | undefined]>((resolve, _) => {
+            movieToEmojisIA({ title: movie.title, description: movie.synopsis })
+              .then(emojis => resolve([movie.corporate_film_id, emojis]));
           })
         );
-      
+
       const resolved_emojis = await Promise.allSettled(emojis_promises)
         .then(promises => promises.filter(isPromiseFullfield).map(p => p.value));
 
-      const emojis_for_movies: Record<corporate_film_id, string | undefined> = Object.fromEntries(
-        resolved_emojis
-      );
+      // Record: { [corporate_film_id] -> emojis }
+      const emojis_for_movies = Object.fromEntries(resolved_emojis);
+
+      type ThumbnailInformation = {
+        average_color: RGBColor,
+        raw_image: string,
+      }
+      /* Creating an ANSI thumbnail art for each movie */
+      const thumbnail_images_promises = all_movies
+        .map(movie => new Promise<[corporate_film_id, ThumbnailInformation]>(async (resolve, _) => {
+          const poster_url = CINEMARK_MOVIE_THUMBNAIL(movie.corporate_film_id);
+          const image_path = await downloadImageToCache(poster_url, movie.corporate_film_id);
+          const ANSI_art = await terminalImage.file(image_path, { width: 45, height: 30 });
+          const average_color = await getAverageColor(image_path);
+          resolve([movie.corporate_film_id, {
+            average_color: {
+              r: average_color.value[0], g: average_color.value[1], b: average_color.value[2],
+            },
+            raw_image: ANSI_art
+          }]);
+        }));
+
+      const resolved_thumbnail_images = await Promise.allSettled(thumbnail_images_promises)
+        .then(promises => promises.filter(isPromiseFullfield).map(p => p.value));
+
+      // Record: [corporate_film_id] -> ThumbnailInformation
+      const ansi_thumbnails_for_movies = Object.fromEntries(resolved_thumbnail_images);
 
       // populate the billboards_to_resolve object
       cinemas.forEach((cinema, i) => {
@@ -150,16 +174,18 @@ class APICache {
             version_tags: uniqueValues(
               movie.movie_versions.map(v => getTagsFromMovieTitle(v.title).version_tags).flat()
             ).join(' '),
-            synopsis: movie.synopsis.replaceAll(/\s{2,}|\t|\r|\s+$/mg, ''),
+            synopsis: movie.synopsis.replaceAll(/\s{2,}|\t|\r|\s+$/mg, ''), // replace weird characters
             emojis: emojis_for_movies[movie.corporate_film_id] || '❓❓❓❓❓',
             trailer_url: movie.trailer_url,
-            poster_url: `https://cinemarkmedia.modyocdn.com/pe/300x400/${movie.corporate_film_id}.jpg`,
+            thumbnail_url: CINEMARK_MOVIE_THUMBNAIL(movie.corporate_film_id),
             duration: Number(movie.runtime),
             rating: movie.rating,
             cast: movie.cast.map((cast): MovieCast => ({
               fullname: `${cast.FirstName.trimEnd()} ${cast.LastName}`,
               role: cast.PersonType
             })),
+            average_thumbnail_color: ansi_thumbnails_for_movies[movie.corporate_film_id].average_color,
+            raw_thumbnail_image: ansi_thumbnails_for_movies[movie.corporate_film_id].raw_image,
             movie_versions: movie.movie_versions.map((version): MovieVersion => {
               const movie_tags = getTagsFromMovieTitle(version.title);
               return {
@@ -199,4 +225,3 @@ setInterval(
   blazinglyFastCache.refreshCache.bind(blazinglyFastCache),
   blazinglyFastCache.updateInterval
 );
-

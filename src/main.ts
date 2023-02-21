@@ -1,4 +1,5 @@
 import express from 'express';
+import { readFileSync } from 'node:fs'
 import { blazinglyFastCache } from './cache.js';
 import { ipLookupLocation } from './services.js';
 
@@ -17,6 +18,13 @@ app.get('/', (req, res) => {
     status: "Anticine status: OK 👍",
     code: 200,
     error: null
+  });
+});
+
+app.get('/ansi', (req, res) => {
+  const ansi = readFileSync('./ansi.txt', { encoding: 'utf-8' });
+  res.send({
+    image: ansi
   });
 });
 

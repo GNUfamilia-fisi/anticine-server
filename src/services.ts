@@ -26,6 +26,10 @@ export const BILLBOARD_ENDPOINT = (cinema_id: string) => (
 );
 export const THEATRES_ENDPOINT = 'https://api.cinemark-peru.com/api/vista/data/theatres';
 
+export const CINEMARK_MOVIE_THUMBNAIL = (corporate_film_id: string) => (
+  `https://cinemarkmedia.modyocdn.com/pe/300x400/${corporate_film_id}.jpg`
+);
+
 const apiHeaders = {
   "accept": "*/*",
   "accept-encoding": "gzip, deflate, br",

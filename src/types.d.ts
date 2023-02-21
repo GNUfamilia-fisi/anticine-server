@@ -232,6 +232,8 @@ type MovieVersionTag = '2D' | '3D' | 'XD';
 type MovieLanguageTag = 'SUB' | 'DOB' | 'CAS' | 'ESP'; // ESP no está documentado pero existe
 type MovieSeatsTag = 'DBOX' | 'PRE' | 'BIS' | 'TRAD';
 
+type RGBColor = { r: number, g: number, b: number };
+
 // Implements FetchedMovieInformation
 interface CinemaMovieInformation {
   corporate_film_id: string;
@@ -240,11 +242,13 @@ interface CinemaMovieInformation {
   emojis: string | null; // added
   version_tags: string; // las tags de todas las versiones
   trailer_url: string;
-  poster_url: string;
+  thumbnail_url: string;
+  average_thumbnail_color: RGBColor;
   duration: number;
   rating: MovieRating;
   cast: MovieCast[];
   movie_versions: MovieVersion[];
+  raw_thumbnail_image: string;
 }
 
 // Tomamos 'film_HOPK' como id. Si bien existe la propiedad 'id', no es
