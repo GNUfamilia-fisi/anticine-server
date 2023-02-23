@@ -33,6 +33,7 @@ class APICache {
     const cinemas = await this.all_cinemas;
     return cinemas;
   }
+  // Devuelve toda la información de un cine (actualmente no se usa)
   async getCinema(cinema_id: cinema_id) {
     const cinemas = await this.all_cinemas;
     return cinemas.find(cinema => cinema.cinema_id === cinema_id);

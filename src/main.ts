@@ -2,6 +2,7 @@ import express from 'express';
 import { readFileSync } from 'node:fs'
 import { blazinglyFastCache } from './cache.js';
 import { ipLookupLocation } from './services.js';
+import { randomInt, randomProbability } from './utils.js';
 
 const app = express();
 app.set('trust proxy', true);
@@ -177,6 +178,43 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
     res.send(to_return);
     return;
   }
+
+  res.send(to_return);
+});
+
+app.get('/session/:session_id', async (req, res) => {
+  const session_id = req.params.session_id;
+  const to_return: MovieSessionResponse = {} as MovieSessionResponse;
+
+  // generate random information for the session
+  to_return.session_id = session_id;
+  to_return.day = "2023-02-22";
+  to_return.hour = "19:40:00";
+  to_return.cinema = await blazinglyFastCache.getCinema('742');
+  to_return.movie_version = {
+    movie_version_id: "HO00005118",
+    title: "ANT MAN AND THE WASP QUATUMANIA (SUB 3D XD DBOX)",
+    version_tags: "3D XD",
+    language_tags: "SUB",
+    seats_tags: "DBOX"
+  };
+  const rowNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as RowsStringNames[];
+  const seatsTypes = ['DBOX', 'PRE', 'BIS', 'TRAD'] as MovieSeatsTag[];
+  const randomRowsLength = randomInt(8, 10);
+  const randomSeatsLength = randomInt(21, 24); // columns
+  to_return.room = {
+    columns_number: randomSeatsLength,
+    rows_number: randomRowsLength,
+    rows: Array.from({ length: randomRowsLength }, (_, i) => ({
+      row_name: rowNames[i],
+      row_number: i,
+      seats: Array.from({ length: randomSeatsLength }, (_, j) => ({
+        col_number: j,
+        is_available: randomProbability(0.15),
+        type: seatsTypes[randomInt(0, seatsTypes.length - 1)]
+      })).filter(() => randomProbability(0.1))
+    }))
+  };
 
   res.send(to_return);
 });

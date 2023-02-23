@@ -17,6 +17,15 @@ export function uniqueValues<T>(arr: T[]): T[] {
   return [...new Set(arr)];
 }
 
+export function randomInt(min: number, max: number) {
+  if (min >= max) return min;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+export function randomProbability(probability: number) {
+  return Math.random() < probability;
+}
+
 /* Movie title tags */
 
 const version_tags = ['2D', '3D', 'XD'] as MovieVersionTag[];

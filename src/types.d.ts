@@ -371,3 +371,38 @@ interface FullBillboardForMovieRouteResponse extends RouteResponse {
   movie: Omit<CinemaMovieInformation, 'movie_versions'>;
   days: BillboardDayForOnlyOneMovie[];
 }
+
+// ------------------------------------------------------------------------------------------
+// https://api.cinemark-peru.com/api/vista/data/billboard?cinema_id={}&(movie_version_id)?={}
+// "movie_version_id" es opcional, en la api se le conoce como "film_HOPK".
+// Este endpoint devuelve exactamente el mismo formato, solo que con el array "movies" de tamaño 1.
+// ------------------------------------------------------------------------------------------
+
+interface SeatForRoom {
+  col_number: number,
+  is_available: boolean,
+  type: MovieSeatsTag
+}
+
+type RowsStringNames = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J'; // max 10 rows
+
+interface RowForRoom {
+  row_name: RowsStringNames,
+  row_number: number,
+  seats: SeatForRoom[]
+}
+
+interface SessionRoomInformation {
+  columns_number: number, // max 24 columns
+  rows_number: number, // max 10 rows
+  rows: RowForRoom[]
+}
+
+interface MovieSessionResponse extends RouteResponse {
+  session_id: string,
+  day: string,
+  hour: string,
+  cinema: CinemaInformation,
+  movie_version: Omit<MovieVersion, 'sessions'>,
+  room: SessionRoomInformation
+}
