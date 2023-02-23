@@ -30,6 +30,11 @@ export function randomChoose<T>(arr: T[]) {
   return arr[randomInt(0, arr.length - 1)];
 }
 
+export function logTimestamp(...what: any[]) {
+  const now = new Date();
+  console.log(`[${now.toUTCString()}]`, ...what);
+}
+
 /* Movie title tags */
 
 const version_tags = ['2D', '3D', 'XD'] as MovieVersionTag[];

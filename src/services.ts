@@ -4,12 +4,11 @@ import runes from 'runes';
 import { Configuration, OpenAIApi } from 'openai';
 dotenv.config();
 
+export const PRODUCTION_MODE = process.env.RAILWAY_ENVIRONMENT === 'production';
+
 const { OPENAI_TOKEN, GEOLOCATION_APIKEY } = process.env;
 // Mock APIs if we're not in production or app mode is testing
-const MOCK_APIS = (
-  process.env.RAILWAY_ENVIRONMENT !== 'production' ||
-  process.env.APP_MODE === 'testing'
-);
+const MOCK_APIS = (!PRODUCTION_MODE || process.env.APP_MODE === 'testing');
 
 if (!OPENAI_TOKEN && !MOCK_APIS) throw new Error('OPENAI_TOKEN not set');
 if (!GEOLOCATION_APIKEY && !MOCK_APIS) throw new Error('GEOLOCATION_APIKEY not set');
@@ -60,9 +59,9 @@ export async function apifetch<T>(url: string, method: string = 'GET') {
 const configuration = new Configuration({ apiKey: OPENAI_TOKEN });
 const openai = new OpenAIApi(configuration);
 
-type openaiMovie = { title: string, description: string, }
+type OpenaiMovie = { title: string, description: string, }
 
-const movie_prompt = (movie: openaiMovie) => (
+const CONVERT_MOVIE_TO_EMOJIS_PROMPT = (movie: OpenaiMovie) => (
 `This is a game! Given the title and descripcion of two movies, represent each of them with 5 flat emojis.
 
 ----------
@@ -77,20 +76,27 @@ ${movie.description}
 ----------
 five flat emojis:`);
 
+export const EMOJIS_NOT_FOUND = '❓❓❓❓❓';
+
 export async function movieToEmojisIA({ title, description } : { title: string, description: string }) {
   if (MOCK_APIS) return '⛄🏰👸🏔️🥶';
-  const response = await openai.createCompletion({
-    model: "text-davinci-002",
-    prompt: movie_prompt({ title, description }),
-    temperature: 0.27,
-    max_tokens: 500,
-    top_p: 1,
-    frequency_penalty: 0,
-    presence_penalty: 0,
-  });
 
-  if (response.status !== 200) {
-    return '⛄🏰👸🏔️🥶';
+  let response: Awaited<ReturnType<typeof openai.createCompletion>>;
+  try {
+    response = await openai.createCompletion({
+      model: "text-davinci-002",
+      prompt: CONVERT_MOVIE_TO_EMOJIS_PROMPT({ title, description }),
+      temperature: 0.27,
+      max_tokens: 500,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
+    });
+  }
+  catch (e) {
+    // docs: https://www.npmjs.com/package/openai#user-content-error-handling
+    console.error(e);
+    throw e;
   }
 
   const emojis = response.data.choices[0].text.trim();
