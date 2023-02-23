@@ -2,7 +2,7 @@ import express from 'express';
 import { readFileSync } from 'node:fs'
 import { blazinglyFastCache } from './cache.js';
 import { ipLookupLocation } from './services.js';
-import { randomInt, randomProbability } from './utils.js';
+import { randomChoose, randomInt, randomProbability } from './utils.js';
 
 const app = express();
 app.set('trust proxy', true);
@@ -211,7 +211,7 @@ app.get('/session/:session_id', async (req, res) => {
       seats: Array.from({ length: randomSeatsLength }, (_, j) => ({
         col_number: j,
         is_available: randomProbability(0.8),
-        type: seatsTypes[randomInt(0, seatsTypes.length - 1)]
+        type: randomChoose(seatsTypes)
       })).filter(() => randomProbability(0.9))
     }))
   };

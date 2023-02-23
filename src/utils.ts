@@ -26,6 +26,10 @@ export function randomProbability(probability: number) {
   return Math.random() < probability;
 }
 
+export function randomChoose<T>(arr: T[]) {
+  return arr[randomInt(0, arr.length - 1)];
+}
+
 /* Movie title tags */
 
 const version_tags = ['2D', '3D', 'XD'] as MovieVersionTag[];
