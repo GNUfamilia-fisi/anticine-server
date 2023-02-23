@@ -210,9 +210,9 @@ app.get('/session/:session_id', async (req, res) => {
       row_number: i,
       seats: Array.from({ length: randomSeatsLength }, (_, j) => ({
         col_number: j,
-        is_available: randomProbability(0.15),
+        is_available: randomProbability(0.8),
         type: seatsTypes[randomInt(0, seatsTypes.length - 1)]
-      })).filter(() => randomProbability(0.1))
+      })).filter(() => randomProbability(0.9))
     }))
   };
 
