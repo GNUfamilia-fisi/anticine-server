@@ -263,10 +263,9 @@ async function render(buffer, {width: inputWidth, height: inputHeight, preserveA
 		for (let x = 0; x < image.bitmap.width; x++) {
 			const {r, g, b, a} = Jimp.intToRGBA(image.getPixelColor(x, y));
 			const {r: r2, g: g2, b: b2} = Jimp.intToRGBA(image.getPixelColor(x, y + 1));
-      result += a === 0 ? reset : bg(r, g, b) + fg(r2, g2, b2) + PIXEL + reset;
+      result += a === 0 ? reset : bg(r, g, b) + fg(r2, g2, b2) + PIXEL;
 		}
-
-		result += '\n';
+		result += reset + '\n';
 	}
 
 	return result;
