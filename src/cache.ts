@@ -242,7 +242,7 @@ class APICache {
       });
 
       resolve(billboards_to_resolve);
-    logTimestamp('Successfully refreshed all billboards!');
+      logTimestamp('Successfully refreshed all billboards!');
     });
   }
 
