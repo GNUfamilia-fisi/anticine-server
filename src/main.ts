@@ -2,19 +2,23 @@ import express from 'express';
 import { readFileSync } from 'node:fs'
 import { blazinglyFastCache } from './cache.js';
 import { ipLookupLocation } from './services.js';
-import { randomChoose, randomInt, randomProbability } from './utils.js';
+import { logTimestamp, randomChoose, randomInt, randomProbability } from './utils.js';
 
 const app = express();
 app.set('trust proxy', true);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 6969;
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });
 
+app.use((req, _res, next) => {
+  logTimestamp(`Request: ${req.ip} -> ${req.url}`);
+  next();
+});
+
 app.get('/', (req, res) => {
-  console.log(req.ip)
   res.send({
     status: "Anticine status: OK 👍",
     code: 200,
@@ -79,7 +83,6 @@ app.get('/cines/cercanos', async (req, res) => {
   to_return.nearest_id = available_cinemas[0].cinema_id;
 
   res.send(to_return);
-  console.log(`hola ${req.ip}`, { location });
 });
 
 app.get('/cines/all', async (req, res) => {

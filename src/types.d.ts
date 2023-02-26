@@ -72,7 +72,7 @@ interface AllCinemasRouteResponse extends RouteResponse {
 
 // -------------------------------------------------------------------------------
 // https://api.cinemark-peru.com/api/vista/ticketing/concession/items?cinema_id={}
-// 
+//
 //       Cada item tiene demasiados campos sin documentación, ni utilidad
 //               por ello solo se extraen los campos necesarios
 // -------------------------------------------------------------------------------
@@ -244,11 +244,11 @@ interface CinemaMovieInformation {
   trailer_url: string;
   thumbnail_url: string;
   average_thumbnail_color: RGBColor;
+  raw_thumbnail_image: string;
   duration: number;
   rating: MovieRating;
   cast: MovieCast[];
   movie_versions: MovieVersion[];
-  raw_thumbnail_image: string;
 }
 
 // Tomamos 'film_HOPK' como id. Si bien existe la propiedad 'id', no es
@@ -282,7 +282,7 @@ interface MovieCast {
 // GET api.url/cines/:cinema_id/cartelera
 
 type MinifiedCinemaMovieInformation = Omit<CinemaMovieInformation,
-  'cast' | 'movie_versions'
+  'cast' | 'movie_versions' | 'raw_thumbnail_image'
 >;
 
 type MinifiedBillboardDayForCinema = {
@@ -304,7 +304,7 @@ interface CinemaAllMoviesFromBillboardRouteResponse extends RouteResponse {
 //
 //     Notar que los objetos devueltos tienen la misma estructura que en los
 // endpoints anteriores. Las diferencias están en el nombre y número propiedades
-//                          (inconsistencia de la API)                          
+//                          (inconsistencia de la API)
 // -----------------------------------------------------------------------------
 
 interface FetchedMovieByFilmIDResponse {

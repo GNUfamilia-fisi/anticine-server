@@ -71,7 +71,7 @@ class APICache {
 
     return billboards?.map(billboard => billboard.movies).flat()
       .map((movie): MinifiedCinemaMovieInformation => {
-        const { cast, movie_versions, ...minifiedMovie } = movie;
+        const { cast, movie_versions, raw_thumbnail_image, ...minifiedMovie } = movie;
         return minifiedMovie;
     }).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
   }
@@ -229,12 +229,15 @@ class APICache {
                 version_tags: movie_tags.version_tags,
                 language_tags: movie_tags.language_tags,
                 seats_tags: movie_tags.seats_tags,
-                sessions: version.sessions.map((session): SessionForMovieVersion => ({
-                  session_id: session.id,
-                  day: session.day,
-                  hour: session.hour,
-                  seats_available: session.seats_available,
-                }))
+                sessions: version.sessions.map((session): SessionForMovieVersion => {
+                  // create random information into database if not exists
+                  return {
+                    session_id: session.id,
+                    day: session.day,
+                    hour: session.hour,
+                    seats_available: session.seats_available
+                  };
+                })
               }
             })
           }))
@@ -250,7 +253,7 @@ class APICache {
     // Always execute it once
     callback();
     if (interval === null) return;
-  
+
     setInterval(() => {
       if (this.cacheConfig.sleepInterval) {
         const { from, to, UTC_offset } = this.cacheConfig.sleepInterval;
