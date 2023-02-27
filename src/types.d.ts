@@ -380,7 +380,8 @@ interface FullBillboardForMovieRouteResponse extends RouteResponse {
 
 interface SeatForRoom {
   col_number: number,
-  is_available: boolean,
+  // is_available: boolean,
+  is_ocupied: boolean,
   type: MovieSeatsTag
 }
 

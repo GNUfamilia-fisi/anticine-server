@@ -233,11 +233,15 @@ app.get('/session/:session_id', async (req, res) => {
     rows: Array.from({ length: randomRowsLength }, (_, i) => ({
       row_name: rowNames[i],
       row_number: i,
-      seats: Array.from({ length: randomSeatsLength }, (_, j) => ({
-        col_number: j,
-        is_available: randomProbability(0.8),
-        type: randomChoose(seatsTypes)
-      })).filter(() => randomProbability(0.9))
+      seats: Array.from({ length: randomSeatsLength }, (_, j) => {
+        const is_available = randomProbability(0.8);
+        return {
+          col_number: j,
+          // is_available: is_available,
+          is_ocupied: randomProbability(0.2),
+          type: randomChoose(seatsTypes)
+        }
+      }).filter(() => randomProbability(0.9))
     }))
   };
 
