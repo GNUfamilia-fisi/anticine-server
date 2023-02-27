@@ -186,26 +186,48 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
 });
 
 app.get('/session/:session_id', async (req, res) => {
+  const to_return: MovieSessionResponse = {
+    session: null,
+    cinema: null,
+    movie: null,
+    movie_version: null,
+    room: null,
+    code: 200,
+    error: null,
+  }
   const session_id = req.params.session_id;
-  const to_return: MovieSessionResponse = {} as MovieSessionResponse;
 
-  // generate random information for the session
-  to_return.session_id = session_id;
-  to_return.day = "2023-02-22";
-  to_return.hour = "19:40:00";
-  to_return.cinema = await blazinglyFastCache.getCinema('742');
-  to_return.movie_version = {
+  // *query to database to get the session*
+  const cinema_id = '742';
+  const corporate_film_id = '91074';
+  const session = {
+    session_id: session_id,
+    day: "2023-02-22",
+    hour: "19:40:00",
+  }
+  const movie_version: Omit<MovieVersion, 'sessions'> = {
     movie_version_id: "HO00005118",
     title: "ANT MAN AND THE WASP QUATUMANIA (SUB 3D XD DBOX)",
     version_tags: "3D XD",
     language_tags: "SUB",
     seats_tags: "DBOX"
   };
+
+  to_return.session = session;
+  // TODO: if not found...
+  to_return.cinema = await blazinglyFastCache.getCinema(cinema_id);
+  // TODO: if not found...
+  to_return.movie = await blazinglyFastCache.getMovieInformation(corporate_film_id);
+  // TODO: if not found...
+  to_return.movie_version = movie_version;
+  // TODO: if not found...
+
+  // generate random information for the session
   const rowNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as RowsStringNames[];
   const seatsTypes = ['DBOX', 'PRE', 'BIS', 'TRAD'] as MovieSeatsTag[];
   const randomRowsLength = randomInt(8, 10);
   const randomSeatsLength = randomInt(21, 24); // columns
-  to_return.room = {
+  const room_to_return = {
     columns_number: randomSeatsLength,
     rows_number: randomRowsLength,
     rows: Array.from({ length: randomRowsLength }, (_, i) => ({
@@ -218,6 +240,8 @@ app.get('/session/:session_id', async (req, res) => {
       })).filter(() => randomProbability(0.9))
     }))
   };
+
+  to_return.room = room_to_return;
 
   res.send(to_return);
 });

@@ -41,30 +41,37 @@ class APICache {
   all_billboards: Promise<
     Record<cinema_id, FullBillboardDaysForCinema | undefined>
   >;
-  all_emojis_for_movies: Record<corporate_film_id, string> = {};
+  private all_movies_information: Map<corporate_film_id, Omit<CinemaMovieInformation, 'movie_versions'>> = new Map();
+  private all_emojis_for_movies: Record<corporate_film_id, string> = {};
+  private all_ANSI_thumbnails: Map<corporate_film_id, ThumbnailInformation> = new Map();
 
   constructor(intervals: RefresingIntervals) {
     this.cacheConfig = intervals;
   }
+
   async getAllCinemas() {
     const cinemas = await this.all_cinemas;
     return cinemas;
   }
+
   // Devuelve toda la información de un cine (actualmente no se usa)
   async getCinema(cinema_id: cinema_id) {
     const cinemas = await this.all_cinemas;
     return cinemas.find(cinema => cinema.cinema_id === cinema_id);
   }
+
   // Devuelve toda la confitería disponible para un cine
   async getConfiteria(cinema_id: cinema_id) {
     const confiterias = await this.confiterias;
     return confiterias[cinema_id];
   }
+
   // Devuelve toda la cartelera de un cine (separado por dates, con todas sus sesiones)
   async getFullBillboard(cinema_id: cinema_id): Promise<FullBillboardDaysForCinema> {
     const billboards = await this.all_billboards;
     return billboards[cinema_id];
   }
+
   // Devuelve todas la lista de películas de un cine (sin importar sus fechas ni sesiones)
   async getAllMoviesFromCinema(cinema_id: cinema_id) {
     const billboards = await this.getFullBillboard(cinema_id);
@@ -75,6 +82,7 @@ class APICache {
         return minifiedMovie;
     }).filter((movie, i, arr) => arr.findIndex(m => m.corporate_film_id === movie.corporate_film_id) === i);
   }
+
   async fetchAllEmojisToCache(fetched_movies: FetchedMovieInformation[]) {
     type EmojiEntry = [corporate_film_id, string];
     const emojis_promises = fetched_movies.map(movie => new Promise<EmojiEntry>(async (resolve) => {
@@ -99,6 +107,33 @@ class APICache {
 
     // Record: { [corporate_film_id] -> emojis }
     this.all_emojis_for_movies = Object.fromEntries(resolved_emojis);
+  }
+
+  async fetchAllANSIThumbnailsToCache(all_fetched_movies: FetchedMovieInformation[]) {
+    const thumbnail_images_promises = all_fetched_movies
+        .map(movie => new Promise<[corporate_film_id, ThumbnailInformation]>(async (resolve, _) => {
+          const poster_url = CINEMARK_MOVIE_THUMBNAIL(movie.corporate_film_id);
+          const image_path = await downloadImageToCache(poster_url, movie.corporate_film_id);
+          const ANSI_art = await terminalImage.file(image_path, { width: 45, height: 30 });
+          const average_color = await getAverageColor(image_path);
+          resolve([movie.corporate_film_id, {
+            average_color: {
+              r: average_color.value[0], g: average_color.value[1], b: average_color.value[2],
+            },
+            raw_image: ANSI_art
+          }]);
+        }));
+
+    const resolved_thumbnail_images = await Promise.allSettled(thumbnail_images_promises)
+      .then(promises => promises.filter(isPromiseFullfield).map(p => p.value));
+
+    this.all_ANSI_thumbnails = new Map(resolved_thumbnail_images);
+  }
+
+  async getMovieInformation(movie_id: corporate_film_id) {
+    // this movie depends on the billboards, so we need to wait for it
+    await this.all_billboards;
+    return this.all_movies_information.get(movie_id);
   }
 
   refreshAllCinemasCache() {
@@ -167,60 +202,51 @@ class APICache {
       );
       // First resolve the billboards to get all the movies, but removing the duplicates
       const billboards = billboardPromises.filter(isPromiseFullfield).map(p => p.value);
-      const all_movies = removeDuplicates(
+      const all_fetched_movies = removeDuplicates(
         billboards.map(billboard => billboard.map(day => day.movies)).flat(2),
         'corporate_film_id'
       );
 
       /* --- Getting emojis for each movie --- */
-      await this.fetchAllEmojisToCache(all_movies);
+      await this.fetchAllEmojisToCache(all_fetched_movies);
 
-      /* Creating an ANSI thumbnail art for each movie */
-      const thumbnail_images_promises = all_movies
-        .map(movie => new Promise<[corporate_film_id, ThumbnailInformation]>(async (resolve, _) => {
-          const poster_url = CINEMARK_MOVIE_THUMBNAIL(movie.corporate_film_id);
-          const image_path = await downloadImageToCache(poster_url, movie.corporate_film_id);
-          const ANSI_art = await terminalImage.file(image_path, { width: 45, height: 30 });
-          const average_color = await getAverageColor(image_path);
-          resolve([movie.corporate_film_id, {
-            average_color: {
-              r: average_color.value[0], g: average_color.value[1], b: average_color.value[2],
-            },
-            raw_image: ANSI_art
-          }]);
-        }));
-
-      const resolved_thumbnail_images = await Promise.allSettled(thumbnail_images_promises)
-        .then(promises => promises.filter(isPromiseFullfield).map(p => p.value));
-
+      /* --- Creating an ANSI thumbnail art for each movie --- */
       // Record: [corporate_film_id] -> ThumbnailInformation
-      const ansi_thumbnails_for_movies = Object.fromEntries(resolved_thumbnail_images);
+      await this.fetchAllANSIThumbnailsToCache(all_fetched_movies);
+
+      const all_movies_entries = all_fetched_movies.map((movie): [string, Omit<CinemaMovieInformation, 'movie_versions'>] => {
+        const information: Omit<CinemaMovieInformation, 'movie_versions'> = {
+          corporate_film_id: movie.corporate_film_id,
+          title: movie.title,
+          // Extract all the versions from the movie_versions property
+          version_tags: uniqueValues(
+            movie.movie_versions.map(v => getTagsFromMovieTitle(v.title).version_tags).flat()
+          ).join(' '),
+          synopsis: movie.synopsis.replaceAll(/\s{2,}|\t|\r|\s+$/mg, ''), // replace weird characters
+          emojis: this.all_emojis_for_movies[movie.corporate_film_id] || EMOJIS_NOT_FOUND,
+          trailer_url: movie.trailer_url,
+          thumbnail_url: CINEMARK_MOVIE_THUMBNAIL(movie.corporate_film_id),
+          duration: Number(movie.runtime),
+          rating: movie.rating,
+          cast: movie.cast.map((cast): MovieCast => ({
+            fullname: `${cast.FirstName.trimEnd()} ${cast.LastName}`,
+            role: cast.PersonType
+          })),
+          average_thumbnail_color: this.all_ANSI_thumbnails.get(movie.corporate_film_id).average_color,
+          raw_thumbnail_image: this.all_ANSI_thumbnails.get(movie.corporate_film_id).raw_image,
+        }
+        return [movie.corporate_film_id, information];
+      });
+
+      this.all_movies_information = new Map<string, Omit<CinemaMovieInformation, 'movie_versions'>>(all_movies_entries);
 
       // populate the billboards_to_resolve object
       cinemas.forEach((cinema, i) => {
-        const billboard = billboards[i];
         // Extract just the necesarry information
-        billboards_to_resolve[cinema.cinema_id] = billboard.map((billboardItem): BillboardDayForCinema => ({
+        billboards_to_resolve[cinema.cinema_id] = billboards[i].map((billboardItem): BillboardDayForCinema => ({
           date: billboardItem.date,
           movies: billboardItem.movies.map((movie): CinemaMovieInformation => ({
-            corporate_film_id: movie.corporate_film_id,
-            title: movie.title,
-            // Extract all the versions from the movie_versions property
-            version_tags: uniqueValues(
-              movie.movie_versions.map(v => getTagsFromMovieTitle(v.title).version_tags).flat()
-            ).join(' '),
-            synopsis: movie.synopsis.replaceAll(/\s{2,}|\t|\r|\s+$/mg, ''), // replace weird characters
-            emojis: this.all_emojis_for_movies[movie.corporate_film_id] || EMOJIS_NOT_FOUND,
-            trailer_url: movie.trailer_url,
-            thumbnail_url: CINEMARK_MOVIE_THUMBNAIL(movie.corporate_film_id),
-            duration: Number(movie.runtime),
-            rating: movie.rating,
-            cast: movie.cast.map((cast): MovieCast => ({
-              fullname: `${cast.FirstName.trimEnd()} ${cast.LastName}`,
-              role: cast.PersonType
-            })),
-            average_thumbnail_color: ansi_thumbnails_for_movies[movie.corporate_film_id].average_color,
-            raw_thumbnail_image: ansi_thumbnails_for_movies[movie.corporate_film_id].raw_image,
+            ...this.all_movies_information.get(movie.corporate_film_id),
             movie_versions: movie.movie_versions.map((version): MovieVersion => {
               const movie_tags = getTagsFromMovieTitle(version.title);
               return {

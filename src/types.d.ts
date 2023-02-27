@@ -399,10 +399,13 @@ interface SessionRoomInformation {
 }
 
 interface MovieSessionResponse extends RouteResponse {
-  session_id: string,
-  day: string,
-  hour: string,
+  session: {
+    session_id: string,
+    day: string,
+    hour: string
+  }
   cinema: CinemaInformation,
+  movie: Omit<CinemaMovieInformation, 'movie_versions'>,
   movie_version: Omit<MovieVersion, 'sessions'>,
   room: SessionRoomInformation
 }
