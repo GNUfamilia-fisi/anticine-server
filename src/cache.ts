@@ -275,7 +275,7 @@ class APICache {
                     },
                     room: generateRandomRoomForSession()
                   }
-                  anticineDB.set(`sessions:${session.id}`, session_to_create);
+                  // anticineDB.set(`sessions:${session.id}`, session_to_create);
                   return {
                     session_id: session.id,
                     day: session.day,

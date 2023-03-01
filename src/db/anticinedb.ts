@@ -56,7 +56,11 @@ export class AnticineDB implements IAnticineDB {
     return new Promise((resolve, reject) => {
       this.socket.write(`GET ${key}`, (e) => {
         if (e) {
-          reject(new Error(e.message));
+          console.log({e})
+          resolve({
+            status: 'error',
+            data: null
+          });
         }
       });
       this.socket.once('data', (data) => {
@@ -76,7 +80,7 @@ export class AnticineDB implements IAnticineDB {
           });
         }
         catch (_) {
-          reject({
+          resolve({
             status: 'error',
             data: null
           })

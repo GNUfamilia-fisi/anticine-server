@@ -381,7 +381,6 @@ interface FullBillboardForMovieRouteResponse extends RouteResponse {
 
 interface SeatForRoom {
   col_number: number,
-  // is_available: boolean,
   is_ocupied: boolean,
   type: MovieSeatsTag
 }
@@ -417,6 +416,21 @@ type MovieSessionResponse = RouteResponse & MovieSessionInformation;
 // Registros y Login
 // ------------------------------------------------------------------------------------------
 
+type CreditCardInformation = {
+  number: string,
+  name: string,
+  expiration_date: string,
+  cvv: string
+}
+
+interface UserInformation {
+  fullname: string,
+  DNI: string,
+  email: string,
+  password: string,
+  credit_card?: CreditCardInformation
+}
+
 interface RegistrationBody {
   fullname: string,
   DNI: string,
@@ -447,4 +461,21 @@ interface LoginResponse extends RouteResponse {
     email: string,
     password: string
   }
+}
+
+// ------------------------------------------------------------------------------------------
+// Compra de entradas
+// ------------------------------------------------------------------------------------------
+
+type SeatPosition = {
+  row_number: number,
+  col_number: number
+}
+
+interface TicketPurchaseBody {
+  email: string,
+  session_id: string,
+  is_guest: boolean,
+  seats: SeatPosition[],
+  credit_card: CreditCardInformation
 }

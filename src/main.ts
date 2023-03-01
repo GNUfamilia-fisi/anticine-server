@@ -186,34 +186,6 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
   res.send(to_return);
 });
 
-app.get('/session/:session_id', async (req, res) => {
-  const to_return: MovieSessionResponse = {
-    session: null,
-    movie_version: null,
-    room: null,
-    code: 200,
-    error: null,
-  }
-  const session_id = req.params.session_id;
-
-  const response = await anticineDB.get(`sessions:${session_id}`);
-
-  if (response.status !== 'ok') {
-    to_return.code = 404;
-    to_return.error = 'No se pudo encontrar la sesión';
-    res.send(to_return);
-    return;
-  }
-
-  const session_information = response.data as MovieSessionInformation;
-
-  to_return.session = session_information.session;
-  to_return.movie_version = session_information.movie_version;
-  to_return.room = session_information.room;
-
-  res.send(to_return);
-});
-
 app.post('/register', async (req, res) => {
   const to_return: RegistrationResponse = {
     code: 200,
@@ -285,6 +257,100 @@ app.post('/login', async (req, res) => {
     res.status(to_return.code).send(to_return);
     return;
   }
+});
+
+app.get('/sessions/:session_id', async (req, res) => {
+  const to_return: MovieSessionResponse = {
+    session: null,
+    movie_version: null,
+    room: null,
+    code: 200,
+    error: null,
+  }
+  const session_id = req.params.session_id;
+
+  const response = await anticineDB.get(`sessions:${session_id}`);
+
+  if (response.status !== 'ok') {
+    to_return.code = 404;
+    to_return.error = 'No se pudo encontrar la sesión';
+    res.send(to_return);
+    return;
+  }
+
+  const session_information = response.data as MovieSessionInformation;
+
+  to_return.session = session_information.session;
+  to_return.movie_version = session_information.movie_version;
+  to_return.room = session_information.room;
+
+  res.send(to_return);
+});
+
+app.post('/sessions/:session_id/reserve', async (req, res) => {
+  const to_return = {
+    code: 200,
+    error: null
+  }
+  const session_id = req.params.session_id;
+  // Is not necessary to store the session_id in the body so is already included in the URI
+  const { email, seats: user_seats, is_guest } = req.body as TicketPurchaseBody;
+
+  console.log({ email, user_seats, is_guest });
+
+  let _user: UserInformation = null;
+
+  if (!is_guest) {
+    const user_response = await anticineDB.get(`users:${email}`);
+
+    if (user_response.status !== 'ok') {
+      to_return.code = 404;
+      to_return.error = 'El usuario no se encuentra registrado';
+      res.send(to_return);
+      return;
+    }
+    _user = user_response.data as UserInformation;
+  }
+
+  const session_response = await anticineDB.get(`sessions:${session_id}`);
+
+  if (session_response.status !== 'ok') {
+    to_return.code = 404;
+    to_return.error = 'No se pudo encontrar la sesión';
+    res.send(to_return);
+    return;
+  }
+
+  // Here we should verify the payment method, but no
+
+  // Now, verify the seats availability
+  const session_information = session_response.data as MovieSessionInformation;
+
+  console.log({ seats_before: session_information.room.rows[0].seats });
+
+  // Mark the corresponding seats as occupied
+  session_information.room.rows = session_information.room.rows.map(row => {
+    row.seats = row.seats.map(seat => {
+      user_seats.forEach(user_seat => {
+        if (row.row_number === user_seat.row_number && seat.col_number === user_seat.col_number) {
+          seat.is_ocupied = true;
+        }
+      });
+      return seat;
+    });
+    return row;
+  });
+
+  console.log({ seats_after: session_information.room.rows[0].seats });
+
+  // Save the session information
+  await anticineDB.set(`sessions:${session_id}`, session_information);
+
+  // Create the ticket
+  // TODO: Create a ticket id, etc
+  // Save the ticket
+
+  res.send(to_return);
 });
 
 // Last route
