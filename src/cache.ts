@@ -1,5 +1,6 @@
-import { downloadImageToCache, getTagsFromMovieTitle, isPromiseFullfield, logTimestamp, removeDuplicates, uniqueValues } from './utils.js';
+import { downloadImageToCache, generateRandomRoomForSession, getTagsFromMovieTitle, isPromiseFullfield, logTimestamp, removeDuplicates, uniqueValues } from './utils.js';
 import {
+  anticineDB,
   apifetch,
   BILLBOARD_ENDPOINT,
   CINEMARK_MOVIE_THUMBNAIL,
@@ -250,13 +251,31 @@ class APICache {
             movie_versions: movie.movie_versions.map((version): MovieVersion => {
               const movie_tags = getTagsFromMovieTitle(version.title);
               return {
+                corporate_film_id: movie.corporate_film_id,
                 movie_version_id: version.film_HOPK,
                 title: version.title,
                 version_tags: movie_tags.version_tags,
                 language_tags: movie_tags.language_tags,
                 seats_tags: movie_tags.seats_tags,
                 sessions: version.sessions.map((session): SessionForMovieVersion => {
-                  // create random information into database if not exists
+                  // Generate a new sesssion randomly
+                  const session_to_create: MovieSessionInformation = {
+                    session: {
+                      session_id: session.id,
+                      day: session.day,
+                      hour: session.hour,
+                    },
+                    movie_version: {
+                      seats_tags: movie_tags.seats_tags,
+                      corporate_film_id: movie.corporate_film_id,
+                      movie_version_id: version.film_HOPK,
+                      language_tags: movie_tags.language_tags,
+                      title: version.title,
+                      version_tags: movie_tags.version_tags,
+                    },
+                    room: generateRandomRoomForSession()
+                  }
+                  anticineDB.set(`sessions:${session.id}`, session_to_create);
                   return {
                     session_id: session.id,
                     day: session.day,

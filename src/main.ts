@@ -1,10 +1,11 @@
 import express from 'express';
 import { readFileSync } from 'node:fs'
 import { blazinglyFastCache } from './cache.js';
-import { ipLookupLocation } from './services.js';
+import { anticineDB, ipLookupLocation } from './services.js';
 import { logTimestamp, randomChoose, randomInt, randomProbability } from './utils.js';
 
 const app = express();
+app.use(express.json());
 app.set('trust proxy', true);
 
 const PORT = process.env.PORT || 6969;
@@ -188,8 +189,6 @@ app.get('/cines/:cinema_id/cartelera/:corporate_film_id', async (req, res) => {
 app.get('/session/:session_id', async (req, res) => {
   const to_return: MovieSessionResponse = {
     session: null,
-    cinema: null,
-    movie: null,
     movie_version: null,
     room: null,
     code: 200,
@@ -197,57 +196,95 @@ app.get('/session/:session_id', async (req, res) => {
   }
   const session_id = req.params.session_id;
 
-  // *query to database to get the session*
-  const cinema_id = '742';
-  const corporate_film_id = '91074';
-  const session = {
-    session_id: session_id,
-    day: "2023-02-22",
-    hour: "19:40:00",
+  const response = await anticineDB.get(`sessions:${session_id}`);
+
+  if (response.status !== 'ok') {
+    to_return.code = 404;
+    to_return.error = 'No se pudo encontrar la sesión';
+    res.send(to_return);
+    return;
   }
-  const movie_version: Omit<MovieVersion, 'sessions'> = {
-    movie_version_id: "HO00005118",
-    title: "ANT MAN AND THE WASP QUATUMANIA (SUB 3D XD DBOX)",
-    version_tags: "3D XD",
-    language_tags: "SUB",
-    seats_tags: "DBOX"
-  };
 
-  to_return.session = session;
-  // TODO: if not found...
-  to_return.cinema = await blazinglyFastCache.getCinema(cinema_id);
-  // TODO: if not found...
-  to_return.movie = await blazinglyFastCache.getMovieInformation(corporate_film_id);
-  // TODO: if not found...
-  to_return.movie_version = movie_version;
-  // TODO: if not found...
+  const session_information = response.data as MovieSessionInformation;
 
-  // generate random information for the session
-  const rowNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as RowsStringNames[];
-  const seatsTypes = ['DBOX', 'PRE', 'BIS', 'TRAD'] as MovieSeatsTag[];
-  const randomRowsLength = randomInt(8, 10);
-  const randomSeatsLength = randomInt(21, 24); // columns
-  const room_to_return = {
-    columns_number: randomSeatsLength,
-    rows_number: randomRowsLength,
-    rows: Array.from({ length: randomRowsLength }, (_, i) => ({
-      row_name: rowNames[i],
-      row_number: i,
-      seats: Array.from({ length: randomSeatsLength }, (_, j) => {
-        const is_available = randomProbability(0.8);
-        return {
-          col_number: j,
-          // is_available: is_available,
-          is_ocupied: randomProbability(0.2),
-          type: randomChoose(seatsTypes)
-        }
-      }).filter(() => randomProbability(0.9))
-    }))
-  };
-
-  to_return.room = room_to_return;
+  to_return.session = session_information.session;
+  to_return.movie_version = session_information.movie_version;
+  to_return.room = session_information.room;
 
   res.send(to_return);
+});
+
+app.post('/register', async (req, res) => {
+  const to_return: RegistrationResponse = {
+    code: 200,
+    error: null,
+    user: null
+  }
+  const user = req.body as RegistrationResponse['user'];
+  const id = `users:${user.email}`;
+
+  try {
+    const found = await anticineDB.get(id);
+    if (found.status === 'ok') {
+      to_return.code = 409;
+      to_return.error = 'Ya existe un usuario con ese correo';
+      res.status(to_return.code).send(to_return);
+      return;
+    }
+    await anticineDB.set(id, user);
+  }
+  catch (_) {
+    to_return.code = 500;
+    to_return.error = 'No se pudo registrar el usuario';
+    res.status(to_return.code).send(to_return);
+    return;
+  }
+
+  user.id = id;
+  to_return.user = user;
+
+  res.send(to_return);
+});
+
+app.post('/login', async (req, res) => {
+  const to_return: LoginResponse = {
+    code: 200,
+    error: null,
+    user: null
+  }
+  const { email, password } = req.body as LoginResponse['user'];
+
+  if (!email || !password) {
+    to_return.code = 400;
+    to_return.error = 'Registro incompleto';
+    res.status(to_return.code).send(to_return);
+    return;
+  }
+
+  const id = `users:${email}`;
+
+  try {
+    const found = await anticineDB.get(id);
+    if (found.status === 'ok') {
+      const user = found.data as LoginResponse['user'];
+      if (user.password === password) {
+        to_return.user = user;
+        to_return.user.id = id;
+        res.send(to_return);
+        return;
+      }
+    }
+    to_return.code = 404;
+    to_return.error = 'No se encontró el usuario';
+    res.status(to_return.code).send(to_return);
+    return;
+  }
+  catch (_) {
+    to_return.code = 500;
+    to_return.error = 'No se pudo iniciar sesión';
+    res.status(to_return.code).send(to_return);
+    return;
+  }
 });
 
 // Last route

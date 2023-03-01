@@ -108,3 +108,33 @@ export async function downloadImageToCache(url: string, filename: string) {
   // TODO: handle downloading error
   return (await downloadImg.image({ url: url, dest: CACHE_DIR })).filename;
 }
+
+/* Get random session (for type: MovieSessionResponse) */
+
+export function generateRandomRoomForSession(): SessionRoomInformation {
+  // generate random information for the session
+  const rowNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as RowsStringNames[];
+  const seatsTypes = ['DBOX', 'PRE', 'BIS', 'TRAD'] as MovieSeatsTag[];
+  const randomRowsLength = randomInt(8, 10);
+  const randomSeatsLength = randomInt(21, 24); // columns
+
+  const room_to_return: SessionRoomInformation = {
+    columns_number: randomSeatsLength,
+    rows_number: randomRowsLength,
+    rows: Array.from({ length: randomRowsLength }, (_, i) => ({
+      row_name: rowNames[i],
+      row_number: i,
+      seats: Array.from({ length: randomSeatsLength }, (_, j) => {
+        const is_available = randomProbability(0.8);
+        return {
+          col_number: j,
+          // is_available: is_available,
+          is_ocupied: randomProbability(0.2),
+          type: randomChoose(seatsTypes)
+        }
+      }).filter(() => randomProbability(0.9))
+    }))
+  };
+
+  return room_to_return;
+}

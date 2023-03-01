@@ -2,7 +2,23 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import runes from 'runes';
 import { Configuration, OpenAIApi } from 'openai';
+import { AnticineDB } from './db/anticinedb.js';
+
 dotenv.config();
+
+// Load DB
+export const anticineDB = new AnticineDB();
+!async function() {
+  try {
+    await anticineDB.connect(7878, 'localhost');
+    console.log('Connected to AnticineDB');
+  }
+  catch (e) {
+    console.error('Failed to connect to AnticineDB');
+    console.error(e);
+    process.exit(1);
+  }
+}();
 
 export const PRODUCTION_MODE = process.env.RAILWAY_ENVIRONMENT === 'production';
 

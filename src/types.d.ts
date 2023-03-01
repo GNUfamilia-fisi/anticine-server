@@ -255,6 +255,7 @@ interface CinemaMovieInformation {
 // un identificador práctico, es solo la combinación de `cinema_id` y `film_HOPK`.
 // Implements FetchedMovieVersion
 interface MovieVersion {
+  corporate_film_id: string;
   movie_version_id: string; // film_HOPK
   title: string;
   version_tags: string;   // added
@@ -399,14 +400,51 @@ interface SessionRoomInformation {
   rows: RowForRoom[]
 }
 
-interface MovieSessionResponse extends RouteResponse {
+// El timpo de dato que se guarda en la base de datos con la key de la forma `sessions:session_id`
+interface MovieSessionInformation {
   session: {
     session_id: string,
     day: string,
     hour: string
   }
-  cinema: CinemaInformation,
-  movie: Omit<CinemaMovieInformation, 'movie_versions'>,
   movie_version: Omit<MovieVersion, 'sessions'>,
   room: SessionRoomInformation
+}
+
+type MovieSessionResponse = RouteResponse & MovieSessionInformation;
+
+// ------------------------------------------------------------------------------------------
+// Registros y Login
+// ------------------------------------------------------------------------------------------
+
+interface RegistrationBody {
+  fullname: string,
+  DNI: string,
+  email: string,
+  password: string
+}
+
+interface RegistrationResponse extends RouteResponse {
+  user: {
+    id: string,
+    fullname: string,
+    DNI: string,
+    email: string,
+    password: string
+  }
+}
+
+interface LoginBody {
+  email: string,
+  password: string
+}
+
+interface LoginResponse extends RouteResponse {
+  user: {
+    id: string,
+    fullname: string,
+    DNI: string,
+    email: string,
+    password: string
+  }
 }

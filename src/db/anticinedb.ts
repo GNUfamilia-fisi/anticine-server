@@ -52,10 +52,13 @@ export class AnticineDB implements IAnticineDB {
   }
 
   async get(key: string): Promise<DBResponse> {
-    this.socket.write(`GET ${key}`);
-
     // listen for the response
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      this.socket.write(`GET ${key}`, (e) => {
+        if (e) {
+          reject(new Error(e.message));
+        }
+      });
       this.socket.once('data', (data) => {
         const response = data.toString();
         if (response === 'not found') {
@@ -64,15 +67,33 @@ export class AnticineDB implements IAnticineDB {
           });
           return;
         }
-        resolve({
-          status: 'ok',
-          data: JSON.parse(response)
-        });
+        let json_data: Object;
+        try {
+          json_data = JSON.parse(response);
+          resolve({
+            status: 'ok',
+            data: json_data
+          });
+        }
+        catch (_) {
+          reject({
+            status: 'error',
+            data: null
+          })
+        }
       });
     });
   }
 
   async set(key: string, value: Object): Promise<void> {
-    this.socket.write(`SET ${key} ${JSON.stringify(value)}`);
+    // this.socket.write(`SET ${key} ${JSON.stringify(value)}`);
+    return new Promise((resolve, reject) => {
+      this.socket.write(`SET ${key} ${JSON.stringify(value)}\r\n`, (e) => {
+        if (e) {
+          reject(new Error(e.message));
+        }
+        resolve();
+      });
+    });
   }
 }
