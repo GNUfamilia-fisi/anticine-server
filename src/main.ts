@@ -2,7 +2,7 @@ import express from 'express';
 import { readFileSync } from 'node:fs'
 import { blazinglyFastCache } from './cache.js';
 import { anticineDB, ipLookupLocation } from './services.js';
-import { logTimestamp, randomChoose, randomInt, randomProbability } from './utils.js';
+import { logTimestamp, mapNumberToChar, randomChoose, randomInt, randomProbability } from './utils.js';
 
 const app = express();
 app.use(express.json());
@@ -326,13 +326,19 @@ app.post('/sessions/:session_id/reserve', async (req, res) => {
   // Now, verify the seats availability
   const session_information = session_response.data as MovieSessionInformation;
 
-  console.log({ seats_before: session_information.room.rows[0].seats });
+  // console.log({ seats_before: session_information.room.rows[0].seats });
+
+  const already_bought: string[] = [];
 
   // Mark the corresponding seats as occupied
   session_information.room.rows = session_information.room.rows.map(row => {
     row.seats = row.seats.map(seat => {
       user_seats.forEach(user_seat => {
         if (row.row_number === user_seat.row_number && seat.col_number === user_seat.col_number) {
+          if (seat.is_ocupied) {
+            const name = `${mapNumberToChar(row.row_number)}${seat.col_number}`;
+            already_bought.push(name);
+          }
           seat.is_ocupied = true;
         }
       });
@@ -341,7 +347,14 @@ app.post('/sessions/:session_id/reserve', async (req, res) => {
     return row;
   });
 
-  console.log({ seats_after: session_information.room.rows[0].seats });
+  // console.log({ seats_after: session_information.room.rows[0].seats });
+
+  if (already_bought.length > 0) {
+    to_return.code = 410; // Gone
+    to_return.error = 'los asientos: ' + already_bought.join(', ') + ' han sido comprados';
+    res.send(to_return);
+    return;
+  }
 
   // Save the session information
   await anticineDB.set(`sessions:${session_id}`, session_information);

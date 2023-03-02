@@ -385,7 +385,7 @@ interface SeatForRoom {
   type: MovieSeatsTag
 }
 
-type RowsStringNames = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J'; // max 10 rows
+type RowsStringNames = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L'; // max 10 rows
 
 interface RowForRoom {
   row_name: RowsStringNames,

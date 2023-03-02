@@ -113,7 +113,7 @@ export async function downloadImageToCache(url: string, filename: string) {
 
 export function generateRandomRoomForSession(): SessionRoomInformation {
   // generate random information for the session
-  const rowNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as RowsStringNames[];
+  const rowNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'] as RowsStringNames[];
   const seatsTypes = ['DBOX', 'PRE', 'BIS', 'TRAD'] as MovieSeatsTag[];
   const randomRowsLength = randomInt(8, 10);
   const randomSeatsLength = randomInt(21, 24); // columns
@@ -124,17 +124,31 @@ export function generateRandomRoomForSession(): SessionRoomInformation {
     rows: Array.from({ length: randomRowsLength }, (_, i) => ({
       row_name: rowNames[i],
       row_number: i,
-      seats: Array.from({ length: randomSeatsLength }, (_, j) => {
-        const is_available = randomProbability(0.8);
-        return {
-          col_number: j,
-          // is_available: is_available,
-          is_ocupied: randomProbability(0.2),
-          type: randomChoose(seatsTypes)
-        }
-      }).filter(() => randomProbability(0.9))
+      seats: Array.from({ length: randomSeatsLength }, (_, j) => ({
+        col_number: j,
+        is_ocupied: randomProbability(0.2),
+        type: randomChoose(seatsTypes)
+      }))
     }))
   };
 
   return room_to_return;
+}
+
+export function mapNumberToChar(num: number): RowsStringNames {
+  switch (num) {
+    case 0: return "A";
+    case 1: return "B";
+    case 2: return "C";
+    case 3: return "D";
+    case 4: return "E";
+    case 5: return "F";
+    case 6: return "G";
+    case 7: return "H";
+    case 8: return "I";
+    case 9: return "J";
+    case 10: return "K";
+    case 11: return "L";
+    default: return null;
+  }
 }
