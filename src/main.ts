@@ -1,16 +1,15 @@
 import express from 'express';
-import { readFileSync } from 'node:fs'
 import { blazinglyFastCache } from './cache.js';
 import { anticineDB, ipLookupLocation } from './services.js';
-import { logTimestamp, mapNumberToChar, randomChoose, randomInt, randomProbability } from './utils.js';
+import { logTimestamp, mapNumberToChar } from './utils.js';
 
 const app = express();
 app.use(express.json());
 app.set('trust proxy', true);
 
-const PORT = process.env.PORT || 6969;
+const PORT = Number(process.env.PORT) || 6969;
 
-app.listen(PORT, () => {
+app.listen(PORT,  () => {
   console.log(`Listening on port ${PORT}`);
 });
 
@@ -19,18 +18,11 @@ app.use((req, _res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
+app.get('/', (_, res) => {
   res.send({
     status: "Anticine status: OK 👍",
     code: 200,
     error: null
-  });
-});
-
-app.get('/ansi', (req, res) => {
-  const ansi = readFileSync('./ansi.txt', { encoding: 'utf-8' });
-  res.send({
-    image: ansi
   });
 });
 

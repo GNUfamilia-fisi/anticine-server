@@ -43,7 +43,7 @@ export class AnticineDB implements IAnticineDB {
     });
   }
 
-  async connect(port: number, host: string = 'localhost'): Promise<void> {
+  async connect(port: number, host: string = '127.0.0.1'): Promise<void> {
     this.socket.connect(port, host);
     let connected = await this.connected;
     if (!connected) {

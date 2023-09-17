@@ -10,7 +10,7 @@ dotenv.config();
 export const anticineDB = new AnticineDB();
 !async function() {
   try {
-    await anticineDB.connect(7878, 'localhost');
+    await anticineDB.connect(7868, '127.0.0.1');
     console.log('Connected to AnticineDB');
   }
   catch (e) {
